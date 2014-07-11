@@ -124,6 +124,8 @@ func getFuncs(fileName string) []FoundFunc {
 			switch {
 			case strings.Contains(s, "Test"):
 			case s == "main":
+			case s == "init":
+			case s == "test":
 			default:
 				// skip other cases
 				////fmt.Printf("FOUND: %s %s\n", fileName, s)
