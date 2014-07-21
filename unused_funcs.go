@@ -38,7 +38,7 @@ func main() {
 			allFuncs = append(allFuncs, funcs...)
 		} else {
 			if strings.Contains(filename, ".go") {
-				funcs := getFuncs(filename)
+				funcs, _ := getFuncsAndImports(filename)
 				allFuncs = append(allFuncs, funcs...)
 			}
 		}
@@ -92,14 +92,15 @@ func readDir(dirname string) []FoundFunc {
 	funcs := []FoundFunc{}
 	filepath.Walk(dirname, func(path string, info os.FileInfo, err error) error {
 		if err == nil && !info.IsDir() && strings.HasSuffix(path, ".go") {
-			funcs = append(funcs, getFuncs(path)...)
+			fset, _ := getFuncsAndImports(path)
+			funcs = append(funcs, fset...)
 		}
 		return err
 	})
 	return funcs
 }
 
-func getFuncs(fileName string) []FoundFunc {
+func getFuncsAndImports(fileName string) ([]FoundFunc, []string) {
 	fset := token.NewFileSet() // positions are relative to fset
 
 	found := []FoundFunc{}
@@ -109,7 +110,7 @@ func getFuncs(fileName string) []FoundFunc {
 	f, err := parser.ParseFile(fset, fileName, nil, 0)
 	if err != nil {
 		fmt.Println(err)
-		return found
+		return found, nil
 	}
 
 	// Print the imports from the file's AST.
@@ -135,5 +136,8 @@ func getFuncs(fileName string) []FoundFunc {
 		return true
 	})
 
-	return found
+	for _, i := range f.Imports {
+		fmt.Printf("[%v]\n", i.Path.Value)
+	}
+	return found, nil
 }
