@@ -4,8 +4,8 @@ package unused
 
 import (
 	"code.google.com/p/go.tools/oracle"
-	//"code.google.com/p/go.tools/oracle/serial"
-	"encoding/json"
+	"code.google.com/p/go.tools/oracle/serial"
+	//"encoding/json"
 	"fmt"
 	"go/ast"
 	"go/build"
@@ -16,25 +16,19 @@ import (
 	"strings"
 )
 
-type CGEntry struct {
-	Name string `json:"name"`
-	Pos  string `json:"pos"`
-}
-type Callgraph struct {
-	Callgraph []CGEntry `json:"callgraph"`
-}
-
 type FoundFunc struct {
 	Name string
 	File string
 }
 
 type UnusedFuncFinder struct {
-	CallgraphJSON []byte //ugh I hate this
+	Callgraph []serial.CallGraph
+
 	filesByCaller map[string][]string
 
-	Verbose      bool
-	ExcludeTests bool
+	Verbose       bool
+	ExcludeTests  bool
+	CallgraphJSON []byte // for setting user json input (hack?)
 
 	pkgs  map[string]struct{}
 	funcs []FoundFunc
@@ -79,14 +73,11 @@ func (uff *UnusedFuncFinder) getCallgraphJSONFromOracle() error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(res)
-
-	// turn it into json because we can't actually access the results :(
-	jsonBytes, err := json.Marshal(res.Serial())
-	if err != nil {
-		return err
+	serialRes := res.Serial()
+	if serialRes.Callgraph == nil {
+		return fmt.Errorf("no callgraph present in oracle results")
 	}
-	uff.CallgraphJSON = jsonBytes
+	uff.Callgraph = serialRes.Callgraph
 	return nil
 }
 
@@ -100,7 +91,7 @@ func (uff *UnusedFuncFinder) readFuncsAndImportsFromFile(filename string) error 
 	// update the set of used packages
 	for _, i := range f.Imports {
 		// strip quotes from package string for safe passing to the oracle
-		pkg := strings.Replace(i.Path.Value, "\"", "", -1)
+		pkg := strings.Trim(i.Path.Value, "\"`'")
 		uff.pkgs[pkg] = struct{}{}
 	}
 
@@ -181,13 +172,14 @@ func (uff *UnusedFuncFinder) Run(fileArgs []string) error {
 
 	// then get the callgraph from json or the oracle
 	if uff.CallgraphJSON == nil {
-		uff.Logf("Running callgraph analysis on following packages: %v", uff.pkgsAsArray())
+		uff.Logf("Running callgraph analysis on following packages: \n\t%v",
+			strings.Join(uff.pkgsAsArray(), "\n\t"))
 		if err := uff.getCallgraphJSONFromOracle(); err != nil {
 			uff.Errorf("Error getting results from oracle: %v", err.Error())
 			return err
 		}
 	}
 
-	fmt.Printf("%v", string(uff.CallgraphJSON))
+	fmt.Printf("%v", uff.Callgraph)
 	return nil
 }
