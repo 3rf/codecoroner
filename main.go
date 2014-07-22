@@ -9,5 +9,6 @@ func main() {
 	flag.Parse()
 
 	uff := unused.NewUnusedFunctionFinder()
+	uff.Verbose = true
 	uff.Run(flag.Args())
 }

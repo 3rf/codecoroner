@@ -4,6 +4,8 @@ package unused
 
 import (
 	"code.google.com/p/go.tools/oracle"
+	//"code.google.com/p/go.tools/oracle/serial"
+	"encoding/json"
 	"fmt"
 	"go/ast"
 	"go/build"
@@ -63,25 +65,28 @@ func (uff *UnusedFuncFinder) Errorf(format string, v ...interface{}) {
 }
 
 func (uff *UnusedFuncFinder) pkgsAsArray() []string {
-	packagesToAnalyze := make([]string, 0, len(uff.pkgs))
+	packages := make([]string, 0, len(uff.pkgs))
 	for pkg, _ := range uff.pkgs {
-		packagesToAnalyze = append(packagesToAnalyze, pkg)
+		if isNotStandardLibrary(pkg) {
+			packages = append(packages, pkg)
+		}
 	}
-	return packagesToAnalyze
+	return packages
 }
 
 func (uff *UnusedFuncFinder) getCallgraphJSONFromOracle() error {
-	res, err := oracle.Query(uff.pkgsAsArray, "callgraph", "", nil, &build.Default, true)
+	res, err := oracle.Query(uff.pkgsAsArray(), "callgraph", "", nil, &build.Default, true)
 	if err != nil {
 		return err
 	}
+	fmt.Println(res)
 
 	// turn it into json because we can't actually access the results :(
-	jsonBytes, err := json.Marshal(res)
+	jsonBytes, err := json.Marshal(res.Serial())
 	if err != nil {
 		return err
 	}
-	self.CallgraphJSON = jsonBytes
+	uff.CallgraphJSON = jsonBytes
 	return nil
 }
 
@@ -94,7 +99,9 @@ func (uff *UnusedFuncFinder) readFuncsAndImportsFromFile(filename string) error 
 
 	// update the set of used packages
 	for _, i := range f.Imports {
-		uff.pkgs[i.Path.Value] = struct{}{}
+		// strip quotes from package string for safe passing to the oracle
+		pkg := strings.Replace(i.Path.Value, "\"", "", -1)
+		uff.pkgs[pkg] = struct{}{}
 	}
 
 	// iterate over the AST, tracking found functions
@@ -138,6 +145,12 @@ func (uff *UnusedFuncFinder) canReadSourceFile(filename string) bool {
 	return true
 }
 
+func isNotStandardLibrary(pkg string) bool {
+	// THIS IS WRONG
+	// FIXME HACK HACK HACK
+	return strings.ContainsRune(pkg, '.')
+}
+
 func (uff *UnusedFuncFinder) readDir(dirname string) error {
 	err := filepath.Walk(dirname, func(path string, info os.FileInfo, err error) error {
 		if err == nil && !info.IsDir() && uff.canReadSourceFile(path) {
@@ -149,19 +162,16 @@ func (uff *UnusedFuncFinder) readDir(dirname string) error {
 }
 
 func (uff *UnusedFuncFinder) Run(fileArgs []string) error {
-
 	// first, get all the file names and package imports
 	for _, filename := range fileArgs {
 		if isDir(filename) {
-			err := uff.readDir(filename)
-			if err != nil {
+			if err := uff.readDir(filename); err != nil {
 				uff.Errorf("Error reading '%v' directory: %v", filename, err.Error())
 				uff.Errorf("Continuing...")
 			}
 		} else {
 			if uff.canReadSourceFile(filename) {
-				err := uff.readFuncsAndImportsFromFile(filename)
-				if err != nil {
+				if err := uff.readFuncsAndImportsFromFile(filename); err != nil {
 					uff.Errorf("Error reading '%v' file: %v", filename, err.Error())
 					uff.Errorf("Continuing...")
 				}
@@ -170,15 +180,14 @@ func (uff *UnusedFuncFinder) Run(fileArgs []string) error {
 	}
 
 	// then get the callgraph from json or the oracle
-	if uff.CallgraphJSON == nil sdaf sdf{
-		uff.Logf("Running callgraph analysis on following packages: %v",
-			uff.pkgsAsArray)
+	if uff.CallgraphJSON == nil {
+		uff.Logf("Running callgraph analysis on following packages: %v", uff.pkgsAsArray())
 		if err := uff.getCallgraphJSONFromOracle(); err != nil {
 			uff.Errorf("Error getting results from oracle: %v", err.Error())
 			return err
 		}
 	}
 
-	fmt.Println("%v", uff.CallgraphJSON)
+	fmt.Printf("%v", string(uff.CallgraphJSON))
 	return nil
 }
