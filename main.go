@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	"github.com/3rf/go-oracle-tools/unused"
+	"github.com/3rf/go-unused-funcs/unused"
 )
 
 func main() {
