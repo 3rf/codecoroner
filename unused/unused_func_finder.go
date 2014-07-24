@@ -11,6 +11,7 @@ import (
 	"go/build"
 	"go/parser"
 	"go/token"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -28,6 +29,7 @@ type UnusedFuncFinder struct {
 
 	Verbose       bool
 	IncludeAll    bool
+	LogWriter     io.Writer
 	CallgraphJSON []byte // for setting user json input (hack?)
 
 	pkgs  map[string]struct{}
@@ -36,9 +38,12 @@ type UnusedFuncFinder struct {
 
 func NewUnusedFunctionFinder() *UnusedFuncFinder {
 	return &UnusedFuncFinder{
+		// init private storage
 		pkgs:          map[string]struct{}{},
 		filesByCaller: map[string][]string{},
 		funcs:         []FoundFunc{},
+		// default to stderr; this can be overwritten before Run() is called
+		LogWriter: os.Stderr,
 	}
 }
 
@@ -48,14 +53,14 @@ func NewUnusedFunctionFinder() *UnusedFuncFinder {
 func (uff *UnusedFuncFinder) Logf(format string, v ...interface{}) {
 	if uff.Verbose {
 		//ignore any errors in Fprintf for now
-		fmt.Fprintf(os.Stderr, format+"\n", v...)
+		fmt.Fprintf(uff.LogWriter, format+"\n", v...)
 	}
 }
 
 // Errorf is a one-off function for writing any error output to
 // stderr. There might be a more idiomatic way to do this in go...
 func (uff *UnusedFuncFinder) Errorf(format string, v ...interface{}) {
-	fmt.Fprintf(os.Stderr, format+"\n", v...)
+	fmt.Fprintf(uff.LogWriter, format+"\n", v...)
 }
 
 // AddPkg sets the package name as an entry in the package map,
@@ -102,16 +107,6 @@ func (uff *UnusedFuncFinder) readFuncsAndImportsFromFile(filename string) error 
 			return fmt.Errorf("error getting main package path: %v", err)
 		}
 		uff.AddPkg(pkgName)
-	}
-
-	// update the set of used packages if we want to throw them all in
-	// FIXME: do we want to instead just grab the pkg path of all files???
-	if uff.IncludeAll {
-		for _, i := range f.Imports {
-			// strip quotes from package string for safe passing to the oracle
-			pkg := strings.Trim(i.Path.Value, "\"`'")
-			uff.AddPkg(pkg)
-		}
 	}
 
 	// iterate over the AST, tracking found functions
