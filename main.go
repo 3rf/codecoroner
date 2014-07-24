@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"github.com/3rf/go-unused-funcs/unused"
 )
 
@@ -12,8 +11,8 @@ func Two() int {
 
 func main() {
 	flag.Parse()
-	fmt.Println(Two())
 	uff := unused.NewUnusedFunctionFinder()
 	uff.Verbose = true
+	//uff.IncludeAll = true
 	uff.Run(flag.Args())
 }

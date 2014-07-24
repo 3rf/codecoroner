@@ -27,7 +27,7 @@ type UnusedFuncFinder struct {
 	filesByCaller map[string][]string
 
 	Verbose       bool
-	ExcludeTests  bool
+	IncludeAll    bool
 	CallgraphJSON []byte // for setting user json input (hack?)
 
 	pkgs  map[string]struct{}
@@ -56,6 +56,12 @@ func (uff *UnusedFuncFinder) Logf(format string, v ...interface{}) {
 // stderr. There might be a more idiomatic way to do this in go...
 func (uff *UnusedFuncFinder) Errorf(format string, v ...interface{}) {
 	fmt.Fprintf(os.Stderr, format+"\n", v...)
+}
+
+// AddPkg sets the package name as an entry in the package map,
+// here the map holds no values and functions as a hash set
+func (uff *UnusedFuncFinder) AddPkg(pkgName string) {
+	uff.pkgs[pkgName] = struct{}{}
 }
 
 func (uff *UnusedFuncFinder) pkgsAsArray() []string {
@@ -88,11 +94,24 @@ func (uff *UnusedFuncFinder) readFuncsAndImportsFromFile(filename string) error 
 		return err
 	}
 
-	// update the set of used packages
-	for _, i := range f.Imports {
-		// strip quotes from package string for safe passing to the oracle
-		pkg := strings.Trim(i.Path.Value, "\"`'")
-		uff.pkgs[pkg] = struct{}{}
+	// check if this is a main packages or
+	// if we want to analyze everything
+	if f.Name.Name == "main" || uff.IncludeAll {
+		pkgName, err := getFullPkgName(filename)
+		if err != nil {
+			return fmt.Errorf("error getting main package path: %v", err)
+		}
+		uff.AddPkg(pkgName)
+	}
+
+	// update the set of used packages if we want to throw them all in
+	// FIXME: do we want to instead just grab the pkg path of all files???
+	if uff.IncludeAll {
+		for _, i := range f.Imports {
+			// strip quotes from package string for safe passing to the oracle
+			pkg := strings.Trim(i.Path.Value, "\"`'")
+			uff.AddPkg(pkg)
+		}
 	}
 
 	// iterate over the AST, tracking found functions
@@ -110,7 +129,6 @@ func (uff *UnusedFuncFinder) readFuncsAndImportsFromFile(filename string) error 
 			case s == "init":
 			case s == "test":
 			default:
-				// skip other cases
 				uff.funcs = append(uff.funcs, FoundFunc{s, filename})
 			}
 		}
@@ -126,10 +144,18 @@ func isDir(filename string) bool {
 	return err == nil && fi.IsDir()
 }
 
-func (uff *UnusedFuncFinder) canReadSourceFile(filename string) bool {
-	if uff.ExcludeTests && strings.HasSuffix(filename, "_test.go") {
-		return false
+// helper for grabbing package name from its folder
+func getFullPkgName(filename string) (string, error) {
+	gopath := os.Getenv("GOPATH")
+	abs, err := filepath.Abs(filename)
+	if err != nil {
+		return "", err
 	}
+	strippedGopath := strings.TrimPrefix(abs, gopath+"/src/")
+	return filepath.Dir(strippedGopath), nil
+}
+
+func (uff *UnusedFuncFinder) canReadSourceFile(filename string) bool {
 	if !strings.HasSuffix(filename, ".go") {
 		return false
 	}
