@@ -17,6 +17,7 @@ import (
 	"strings"
 )
 
+//TODO rename to FuncEntry or something
 type FoundFunc struct {
 	Name string
 	File string
@@ -25,15 +26,14 @@ type FoundFunc struct {
 type UnusedFuncFinder struct {
 	Callgraph []serial.CallGraph
 
-	filesByCaller map[string][]string
-
 	Verbose       bool
 	IncludeAll    bool
 	LogWriter     io.Writer
 	CallgraphJSON []byte // for setting user json input (hack?)
 
-	pkgs  map[string]struct{}
-	funcs []FoundFunc
+	filesByCaller map[string][]string
+	pkgs          map[string]struct{}
+	funcs         []FoundFunc
 }
 
 func NewUnusedFunctionFinder() *UnusedFuncFinder {
@@ -72,9 +72,7 @@ func (uff *UnusedFuncFinder) AddPkg(pkgName string) {
 func (uff *UnusedFuncFinder) pkgsAsArray() []string {
 	packages := make([]string, 0, len(uff.pkgs))
 	for pkg, _ := range uff.pkgs {
-		if isNotStandardLibrary(pkg) {
-			packages = append(packages, pkg)
-		}
+		packages = append(packages, pkg)
 	}
 	return packages
 }
@@ -133,6 +131,40 @@ func (uff *UnusedFuncFinder) readFuncsAndImportsFromFile(filename string) error 
 	return nil
 }
 
+func (uff *UnusedFuncFinder) computeUnusedFuncs() []FoundFunc {
+	unused := []FoundFunc{}
+	for _, f := range uff.funcs {
+		if !uff.isInCG(f) {
+			unused = append(unused, f)
+		}
+	}
+	return unused
+}
+
+func (uff *UnusedFuncFinder) isInCG(f FoundFunc) bool {
+	files, ok := uff.filesByCaller[f.Name]
+	if !ok {
+		return false
+	}
+	for _, path := range files {
+		if strings.Contains(path, f.File) {
+			return true
+		}
+	}
+	return false
+}
+
+func (uff *UnusedFuncFinder) buildFileMap() {
+	for _, entry := range uff.Callgraph {
+		//strip off the package name for simplicity
+		//TODO, can this be left on? Try prepending func names with package?
+		idx := strings.LastIndex(entry.Name, ".") + 1
+		if idx != 0 {
+			uff.filesByCaller[entry.Name[idx:]] = append(uff.filesByCaller[entry.Name[idx:]], entry.Pos)
+		}
+	}
+}
+
 // helper for directory traversal
 func isDir(filename string) bool {
 	fi, err := os.Stat(filename)
@@ -173,7 +205,8 @@ func (uff *UnusedFuncFinder) readDir(dirname string) error {
 	return err
 }
 
-func (uff *UnusedFuncFinder) Run(fileArgs []string) error {
+func (uff *UnusedFuncFinder) Run(fileArgs []string) ([]FoundFunc, error) {
+
 	// first, get all the file names and package imports
 	for _, filename := range fileArgs {
 		if isDir(filename) {
@@ -197,10 +230,17 @@ func (uff *UnusedFuncFinder) Run(fileArgs []string) error {
 			strings.Join(uff.pkgsAsArray(), "\n\t"))
 		if err := uff.getCallgraphJSONFromOracle(); err != nil {
 			uff.Errorf("Error getting results from oracle: %v", err.Error())
-			return err
+			return nil, err
 		}
+	} else {
+		//TODO json parser
 	}
 
-	fmt.Printf("%v", uff.Callgraph)
-	return nil
+	// use that callgraph to build a callgraph->file map
+	uff.buildFileMap()
+
+	// finally, figure out which functions are not in the graph
+	unusedFuncs := uff.computeUnusedFuncs()
+
+	return unusedFuncs, nil
 }
