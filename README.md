@@ -2,7 +2,7 @@ go-unused-funcs
 ===============
 
 Leaving dead code in a large codebase with multiple libraries is difficult to avoid.
-Things get moved around, functions get refactored leaving helpers on their own, people miscommunicate. 
+Things get moved around; functions get refactored, leaving helpers on their own; people miscommunicate. 
 
 One of the easiest ways to detect dead code is through static analysis. 
 Unfortunately, Go's current static analysis tools (the oracle) do not make aggregation of unused functions as easy as it should be.
@@ -28,6 +28,8 @@ will check the go-unused-funcs source folder for unused functions.
 As an example
 ```bash
 $ bin/go-unused-funcs -v -all src/github.com/3rf/go-unused-funcs
+```
+```
 Collecting func declarations from source files
 Parsed 2 source files
 Running callgraph analysis on following packages:
