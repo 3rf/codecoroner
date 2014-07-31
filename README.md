@@ -32,8 +32,8 @@ Notes:
  * You can avoid calling the oracle during execution by passing in your own callgraph file in json format. See the oracle documentation for more info: https://docs.google.com/document/d/1SLk36YRjjMgKqe490mSRzOPYEDe0Y_WQNRv-EiFYUyw/view
  * Go oracle is not always correct, and may crash or improperly parse certain code
  * Go-unused-funcs only scans declarations. Functions created in the manner of 
-   ```go
-   ExportedFunc := func(int a) int {return a + 5} 
+   ```
+   ExportedFiveFunc := func() int {return 5} 
    ```
    are not caught with this tool
 
