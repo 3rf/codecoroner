@@ -25,6 +25,13 @@ go-unused-funcs src/github.com/3rf/go-unused-funcs/*
 ```
 will check the go-unused-funcs source folder for unused functions.
 
+Notes:
+ * If you would like to include test files in the callgraph (so that functions called only by tests are not marked as unused) run the tool with `-all`
+ * Run with `-v` to print a log of what go-unused-funcs is doing to stderr
+ * If you have code you would not like scanned, you can use the `-ignore` flag to prune out matching paths
+ * You can avoid calling the oracle during execution by passing in your own callgraph file in json format. See the oracle documentation for more info: https://docs.google.com/document/d/1SLk36YRjjMgKqe490mSRzOPYEDe0Y_WQNRv-EiFYUyw/view
+
+
 As an example
 ```bash
 $ bin/go-unused-funcs -v -all src/github.com/3rf/go-unused-funcs
@@ -40,9 +47,3 @@ Scanning callgraph for unused functions
 Two in 'src/github.com/3rf/go-unused-funcs/main.go'
 isNotStandardLibrary in 'src/github.com/3rf/go-unused-funcs/unused/unused_func_finder.go'
 ```
-
-Notes:
- * If you would like to include test files in the callgraph (so that functions called only by tests are not marked as unused) run the tool with `-all`
- * Run with `-v` to print a log of what go-unused-funcs is doing to stderr
- * If you have code you would not like scanned, you can use the `-ignore` flag to prune out matching paths
- * You can avoid calling the oracle during execution by passing in your own callgraph file in json format. See the oracle documentation for more info: https://docs.google.com/document/d/1SLk36YRjjMgKqe490mSRzOPYEDe0Y_WQNRv-EiFYUyw/view
