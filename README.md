@@ -1,42 +1,46 @@
 go-unused-funcs
 ===============
 
-This tool uses the output of the go oracle to find unused
-functions/methods in your codebase. It is hard to use,
-but that is mostly because go oracle is hard to use. Woo.
+Leaving dead code in a large codebase with multiple libraries is difficult to avoid.
+Things get moved around, functions get refactored leaving helpers on their own, people miscommunicate. 
 
-###Instructions
+One of the easiest ways to detect dead code is through static analysis. 
+Unfortunately, Go's current static analysis tools (the oracle) do not make aggregation of unused functions as easy as it should be.
+This tool, go-unused-funcs, uses the output of the Go oracle library to find unused functions/methods in your codebase. 
 
-First, you have to use the go oracle to generate a callgraph of
-your packages in json format. For info on how to do this visit
-the go oracle docs: https://docs.google.com/document/d/1SLk36YRjjMgKqe490mSRzOPYEDe0Y_WQNRv-EiFYUyw
+###Quick Start
 
-The command will looks something like:
+First, grab the go-unused-funcs binary by either cloning this git repository and building main.go or by running
+```bash
+go get github.com/3rf/go-unused-funcs
 ```
-oracle -format=json callgraph path/for/pkgmain path/for/otherpkg ... > cg.json
+which should install a go-unused-funcs binary in `$GOPATH/bin`
+
+Go-unused-funcs takes in a set of files/folders, and scans them for functions and packages.
+Every "main" package is collected and given to the go oracle for callgraph analysis.
+The tool then checks all of the scanned function declarations against the callgraph to find unused ones.
+To run the go-unused-funcs, simply call `go-unused-funcs` along with a set of files. For example:
+```bash
+go-unused-funcs src/github.com/3rf/go-unused-funcs/* 
+```
+will check the go-unused-funcs source folder for unused functions.
+
+As an example
+```bash
+$ bin/go-unused-funcs -v -all src/github.com/3rf/go-unused-funcs
+Collecting func declarations from source files
+Parsed 2 source files
+Running callgraph analysis on following packages:
+	github.com/3rf/go-unused-funcs
+	github.com/3rf/go-unused-funcs/unused
+Scanning callgraph for unused functions
+
+Two in 'src/github.com/3rf/go-unused-funcs/main.go'
+isNotStandardLibrary in 'src/github.com/3rf/go-unused-funcs/unused/unused_func_finder.go'
 ```
 
-Some notes:
-  * You have to manually pass in all of the packages you wish to analyze. Sorry if you have a large codebase
-  * Be sure to pipe the output into a file so go-unused-funcs can use it
-  * Future versions of this tool will handle the oracle for you
-  * You might think "oracle" is a bad name for a pkg that doesn't interface with the Oracle RDBMS, you are right to think that.
-
-Once you've piped the json output to a file, it's time to run go-unused-funcs:
-```
-go-unused-funcs -calljson cg.json *
-```
-
-You may also substitute the star to be any file(s) you want to test.
-
-The output should resemble:
-```
-getTaskFromRequest in apiserver/api.go NOT USED
-fetchPatch in apiserver/patch_api.go NOT USED
-ValidateIdToken in auth/oauth.go NOT USED
-```
-
-More notes:
-  * Functions used in tests and nowhere else are counted in the callgraph, you can work around this by deleting all of your test files and then running the oracle and go-unused-funcs again. Hope you have version control!
-  * This is not completely tested. I have yet to see any false positives, but they may be out there
-  * One common pitfall is not including packages in the call to the oracle, double check your package list if you feel too many unused functions are being listed
+Notes:
+ * If you would like to include test files in the callgraph (so that functions called only by tests are not marked as unused) run the tool with `-all`
+ * Run with `-v` to print a log of what go-unused-funcs is doing to stderr
+ * If you have code you would not like scanned, you can use the `-ignore` flag to prune out matching paths
+ * You can avoid calling the oracle during execution by passing in your own callgraph file in json format. See the oracle documentation for more info: https://docs.google.com/document/d/1SLk36YRjjMgKqe490mSRzOPYEDe0Y_WQNRv-EiFYUyw/view
