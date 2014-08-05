@@ -1,5 +1,7 @@
 go-unused-funcs
 ===============
+######Version 1.0 by Kyle Erf, MIT License
+
 
 Leaving dead code in a large codebase with multiple libraries is difficult to avoid.
 Things get moved around; functions get refactored, leaving helpers on their own; people miscommunicate. 
@@ -52,3 +54,8 @@ Scanning callgraph for unused functions
 Two in 'src/github.com/3rf/go-unused-funcs/main.go'
 isNotStandardLibrary in 'src/github.com/3rf/go-unused-funcs/unused/unused_func_finder.go'
 ```
+
+####Common Issues
+
+1. If you are getting an error message like `Error getting results from oracle: import "/Users/kyle/folders/pkg/something": cannot import absolute path`, this is usually an indication that you are running the oracle on a folder that is not in your current GOPATH. Go-unused-funcs must be run on source files within your current GOPATH.
+2. If the Go oracle is complaining about incorrect code, but your code is usable by the compiler, then congratulations: you've found a bug in the oracle tool. This happens much more often than I would like it to; one of the best things you can do is file a bug against it at https://code.google.com/p/go/issues/list. One possible workaround is to use the `-ignore` option to avoid the offending package.
