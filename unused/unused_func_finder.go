@@ -196,7 +196,8 @@ func getFullPkgName(filename string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	strippedGopath := strings.TrimPrefix(abs, gopath+"/src/") //FIXME, handle GOPATH with / at the end
+	//TODO, make this nicer and add a test
+	strippedGopath := strings.TrimPrefix(abs, filepath.Join(gopath, "/src/")+"/")
 	return filepath.Dir(strippedGopath), nil
 }
 
