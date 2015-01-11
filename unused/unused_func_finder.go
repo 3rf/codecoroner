@@ -15,6 +15,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"golang.org/x/tools/oracle"
+	"golang.org/x/tools/oracle/serial"
 )
 
 var NICE = 2
