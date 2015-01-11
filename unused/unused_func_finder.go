@@ -3,8 +3,6 @@
 package unused
 
 import (
-	"code.google.com/p/go.tools/oracle"
-	"code.google.com/p/go.tools/oracle/serial"
 	"encoding/json"
 	"fmt"
 	"go/ast"
@@ -15,6 +13,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"golang.org/x/tools/oracle"
+	"golang.org/x/tools/oracle/serial"
 )
 
 //TODO rename to FuncEntry or something
