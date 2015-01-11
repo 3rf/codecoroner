@@ -192,14 +192,22 @@ func isDir(filename string) bool {
 
 // helper for grabbing package name from its folder
 func getFullPkgName(filename string) (string, error) {
-	gopath := os.Getenv("GOPATH")
 	abs, err := filepath.Abs(filename)
 	if err != nil {
 		return "", err
 	}
-	//TODO, make this nicer and add a test
-	strippedGopath := strings.TrimPrefix(abs, filepath.Join(gopath, "/src/")+"/")
-	return filepath.Dir(strippedGopath), nil
+	goPaths := filepath.SplitList(os.Getenv("GOPATH"))
+	for _, p := range goPaths {
+		p = filepath.Join(p, "src") + "/"
+		if !strings.HasPrefix(abs, p) {
+			continue
+		}
+		stripped := strings.TrimPrefix(abs, p)
+		return filepath.Dir(stripped), nil
+	}
+	// a check during initialization ensures that GOPATH != "" so this
+	// should be safe
+	return "", fmt.Errorf("cd %q and try again", goPaths[len(goPaths)-1])
 }
 
 func (uff *UnusedFuncFinder) canReadSourceFile(filename string) bool {
