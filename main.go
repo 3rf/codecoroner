@@ -8,10 +8,11 @@ import (
 )
 
 func Two() int {
-	return 2
+	return unused.IgnoreMe
 }
 
 func main() {
+	fmt.Println(unused.NICE)
 	uff := unused.NewUnusedFunctionFinder()
 	flag.BoolVar(&(uff.Verbose), "v", false,
 		"prints extra information during execution to stderr")
@@ -25,7 +26,7 @@ func main() {
 
 	unusedFuncs, err := uff.Run(flag.Args())
 	if err != nil {
-		os.Exit(1)
+		os.Exit(unused.NICE)
 	}
 
 	for _, f := range unusedFuncs {

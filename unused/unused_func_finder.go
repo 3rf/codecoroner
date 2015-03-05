@@ -3,19 +3,24 @@
 package unused
 
 import (
-	"golang.org/x/tools/oracle"
-	"golang.org/x/tools/oracle/serial"
 	"encoding/json"
 	"fmt"
+	//"github.com/davecgh/go-spew/spew"
 	"go/ast"
 	"go/build"
 	"go/parser"
 	"go/token"
+	"golang.org/x/tools/go/loader"
+	//"golang.org/x/tools/go/types"
+	"golang.org/x/tools/oracle"
+	"golang.org/x/tools/oracle/serial"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 )
+
+var NICE = 2
 
 //TODO rename to FuncEntry or something
 type FoundFunc struct {
@@ -127,9 +132,20 @@ func (uff *UnusedFuncFinder) readFuncsAndImportsFromFile(filename string) error 
 	// iterate over the AST, tracking found functions
 	ast.Inspect(f, func(n ast.Node) bool {
 		var s string
-		switch n.(type) {
+		switch node := n.(type) {
+
+		/*case *ast.TypeSpec:
+			fmt.Print(filename + "\t")
+			fmt.Printf(">>TYPE: %v\n", node.Name.Name)
+		case *ast.ValueSpec:
+			fmt.Print(filename + "\t")
+			fmt.Printf(">>VALUE: %v\n", node.Names)
+		case *ast.SelectorExpr:
+			fmt.Print(filename + "\t")
+			fmt.Printf(">>SELECTOR: %#v.%v\n", node.X, node.Sel.Name)*/
+
 		case *ast.FuncDecl:
-			asFunc := n.(*ast.FuncDecl)
+			asFunc := node
 			s = asFunc.Name.String()
 		}
 		if s != "" {
@@ -258,6 +274,44 @@ func (uff *UnusedFuncFinder) Run(fileArgs []string) ([]FoundFunc, error) {
 		}
 	}
 	uff.Logf("Parsed %v source files", uff.numFilesRead)
+
+	var conf loader.Config
+	_, err := conf.FromArgs(uff.pkgsAsArray(), false)
+	fmt.Println(err)
+	p, err := conf.Load()
+	fmt.Println(err)
+
+	thingToUsage := map[string]int{}
+	defined := map[string]struct{}{}
+	for key, info := range p.Imported {
+		if strings.Contains(key, ".") {
+			for _, kind := range info.Info.Uses {
+				if kind.Pkg() != nil {
+					id := fmt.Sprintf("%s.%s", kind.Pkg().Path(), kind.Name())
+					thingToUsage[id] = thingToUsage[id] + 1
+				}
+			}
+			for _, kind := range info.Info.Defs {
+				if kind == nil {
+					continue
+				}
+				if kind.Pkg() != nil {
+					if kind.Name() == "_" || kind.Name() == "main" || kind.Name() == "init" {
+						continue
+					}
+					id := fmt.Sprintf("%s.%s", kind.Pkg().Path(), kind.Name())
+					defined[id] = struct{}{}
+					fmt.Println("Def =>", id)
+				}
+			}
+		}
+	}
+	for key, _ := range defined {
+		if _, exists := thingToUsage[key]; !exists {
+			fmt.Println("!!!", key)
+		}
+	}
+	return nil, nil
 
 	// then get the callgraph from json or the oracle
 	if uff.CallgraphJSON == "" {
