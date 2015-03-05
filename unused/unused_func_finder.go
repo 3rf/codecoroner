@@ -3,8 +3,8 @@
 package unused
 
 import (
-	"code.google.com/p/go.tools/oracle"
-	"code.google.com/p/go.tools/oracle/serial"
+	"golang.org/x/tools/oracle"
+	"golang.org/x/tools/oracle/serial"
 	"encoding/json"
 	"fmt"
 	"go/ast"
