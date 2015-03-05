@@ -5,13 +5,10 @@ package unused
 import (
 	"encoding/json"
 	"fmt"
-	//"github.com/davecgh/go-spew/spew"
 	"go/ast"
 	"go/build"
 	"go/parser"
 	"go/token"
-	"golang.org/x/tools/go/loader"
-	//"golang.org/x/tools/go/types"
 	"golang.org/x/tools/oracle"
 	"golang.org/x/tools/oracle/serial"
 	"io"
@@ -22,10 +19,16 @@ import (
 
 var NICE = 2
 
-//TODO rename to FuncEntry or something
-type FoundFunc struct {
+type UnusedThing struct {
 	Name string
 	File string
+}
+
+func (ut UnusedThing) String() string {
+	if ut.File != "" {
+		return fmt.Sprintf("%s in '%s'", ut.Name, ut.File)
+	}
+	return ut.Name
 }
 
 type UnusedFuncFinder struct {
@@ -37,9 +40,12 @@ type UnusedFuncFinder struct {
 	LogWriter     io.Writer
 	CallgraphJSON string // for setting user json input (hack?)
 
+	Idents       bool
+	ExportedOnly bool
+
 	filesByCaller map[string][]string
 	pkgs          map[string]struct{}
-	funcs         []FoundFunc
+	funcs         []UnusedThing
 	numFilesRead  int
 }
 
@@ -48,7 +54,7 @@ func NewUnusedFunctionFinder() *UnusedFuncFinder {
 		// init private storage
 		pkgs:          map[string]struct{}{},
 		filesByCaller: map[string][]string{},
-		funcs:         []FoundFunc{},
+		funcs:         []UnusedThing{},
 		// default to stderr; this can be overwritten before Run() is called
 		LogWriter: os.Stderr,
 	}
@@ -133,29 +139,19 @@ func (uff *UnusedFuncFinder) readFuncsAndImportsFromFile(filename string) error 
 	ast.Inspect(f, func(n ast.Node) bool {
 		var s string
 		switch node := n.(type) {
-
-		/*case *ast.TypeSpec:
-			fmt.Print(filename + "\t")
-			fmt.Printf(">>TYPE: %v\n", node.Name.Name)
-		case *ast.ValueSpec:
-			fmt.Print(filename + "\t")
-			fmt.Printf(">>VALUE: %v\n", node.Names)
-		case *ast.SelectorExpr:
-			fmt.Print(filename + "\t")
-			fmt.Printf(">>SELECTOR: %#v.%v\n", node.X, node.Sel.Name)*/
-
 		case *ast.FuncDecl:
 			asFunc := node
 			s = asFunc.Name.String()
 		}
 		if s != "" {
 			switch {
+			//TODO make this a helper
 			case strings.Contains(s, "Test"):
 			case s == "main":
 			case s == "init":
 			case s == "test":
 			default:
-				uff.funcs = append(uff.funcs, FoundFunc{s, filename})
+				uff.funcs = append(uff.funcs, UnusedThing{s, filename})
 			}
 		}
 		return true
@@ -165,8 +161,8 @@ func (uff *UnusedFuncFinder) readFuncsAndImportsFromFile(filename string) error 
 	return nil
 }
 
-func (uff *UnusedFuncFinder) computeUnusedFuncs() []FoundFunc {
-	unused := []FoundFunc{}
+func (uff *UnusedFuncFinder) computeUnusedFuncs() []UnusedThing {
+	unused := []UnusedThing{}
 	for _, f := range uff.funcs {
 		if !uff.isInCG(f) {
 			unused = append(unused, f)
@@ -175,7 +171,7 @@ func (uff *UnusedFuncFinder) computeUnusedFuncs() []FoundFunc {
 	return unused
 }
 
-func (uff *UnusedFuncFinder) isInCG(f FoundFunc) bool {
+func (uff *UnusedFuncFinder) isInCG(f UnusedThing) bool {
 	files, ok := uff.filesByCaller[f.Name]
 	if !ok {
 		return false
@@ -244,7 +240,7 @@ func (uff *UnusedFuncFinder) readDir(dirname string) error {
 	return err
 }
 
-func (uff *UnusedFuncFinder) Run(fileArgs []string) ([]FoundFunc, error) {
+func (uff *UnusedFuncFinder) Run(fileArgs []string) ([]UnusedThing, error) {
 
 	// do some basic sanity checks on system configuration
 	if len(fileArgs) == 0 {
@@ -275,43 +271,9 @@ func (uff *UnusedFuncFinder) Run(fileArgs []string) ([]FoundFunc, error) {
 	}
 	uff.Logf("Parsed %v source files", uff.numFilesRead)
 
-	var conf loader.Config
-	_, err := conf.FromArgs(uff.pkgsAsArray(), false)
-	fmt.Println(err)
-	p, err := conf.Load()
-	fmt.Println(err)
-
-	thingToUsage := map[string]int{}
-	defined := map[string]struct{}{}
-	for key, info := range p.Imported {
-		if strings.Contains(key, ".") {
-			for _, kind := range info.Info.Uses {
-				if kind.Pkg() != nil {
-					id := fmt.Sprintf("%s.%s", kind.Pkg().Path(), kind.Name())
-					thingToUsage[id] = thingToUsage[id] + 1
-				}
-			}
-			for _, kind := range info.Info.Defs {
-				if kind == nil {
-					continue
-				}
-				if kind.Pkg() != nil {
-					if kind.Name() == "_" || kind.Name() == "main" || kind.Name() == "init" {
-						continue
-					}
-					id := fmt.Sprintf("%s.%s", kind.Pkg().Path(), kind.Name())
-					defined[id] = struct{}{}
-					fmt.Println("Def =>", id)
-				}
-			}
-		}
+	if uff.Idents {
+		return uff.findUnusedIdents()
 	}
-	for key, _ := range defined {
-		if _, exists := thingToUsage[key]; !exists {
-			fmt.Println("!!!", key)
-		}
-	}
-	return nil, nil
 
 	// then get the callgraph from json or the oracle
 	if uff.CallgraphJSON == "" {

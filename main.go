@@ -8,11 +8,10 @@ import (
 )
 
 func Two() int {
-	return unused.IgnoreMe
+	return unused.Nothing
 }
 
 func main() {
-	fmt.Println(unused.NICE)
 	uff := unused.NewUnusedFunctionFinder()
 	flag.BoolVar(&(uff.Verbose), "v", false,
 		"prints extra information during execution to stderr")
@@ -22,6 +21,9 @@ func main() {
 		"don't read files that match the given string (use to avoid /testdata, etc) ")
 	flag.StringVar(&(uff.CallgraphJSON), "callgraphjson", "",
 		"pass in a callgraph in json format instead of computing one")
+	flag.BoolVar(&(uff.Idents), "idents", false, "")
+	flag.BoolVar(&(uff.ExportedOnly), "exported", false,
+		"pass in a callgraph in json format instead of computing one")
 	flag.Parse()
 
 	unusedFuncs, err := uff.Run(flag.Args())
@@ -30,6 +32,6 @@ func main() {
 	}
 
 	for _, f := range unusedFuncs {
-		fmt.Printf("%v in '%v'\n", f.Name, f.File)
+		fmt.Printf("%s\n", f)
 	}
 }
