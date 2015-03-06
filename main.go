@@ -12,16 +12,16 @@ func Two() int {
 }
 
 func main() {
-	uff := unused.NewUnusedFunctionFinder()
-	flag.BoolVar(&(uff.Verbose), "v", false,
+	ucf := unused.NewUnusedCodeFinder()
+	flag.BoolVar(&(ucf.Verbose), "v", false,
 		"prints extra information during execution to stderr")
-	flag.BoolVar(&(uff.IncludeAll), "all", false,
+	flag.BoolVar(&(ucf.IncludeAll), "all", false,
 		"includes all found packages in analysis, not just main packages")
-	flag.StringVar(&(uff.Ignore), "ignore", "",
+	flag.StringVar(&(ucf.Ignore), "ignore", "",
 		"don't read files that match the given string (use to avoid /testdata, etc) ")
-	flag.BoolVar(&(uff.ExportedOnly), "exported", false, "")
-	flag.BoolVar(&(uff.SkipMethodsAndFields), "skipmembers", false, "")
-	flag.BoolVar(&(uff.IncludeTests), "tests", false, "")
+	flag.BoolVar(&(ucf.ExportedOnly), "exported", false, "")
+	flag.BoolVar(&(ucf.SkipMethodsAndFields), "skipmembers", false, "")
+	flag.BoolVar(&(ucf.IncludeTests), "tests", false, "")
 	flag.Parse()
 
 	if len(flag.Args()) == 0 {
@@ -31,15 +31,15 @@ func main() {
 	command := flag.Arg(0)
 	switch command {
 	case "funcs", "functions":
-		uff.Idents = false
+		ucf.Idents = false
 	case "idents", "identifiers":
-		uff.Idents = true
+		ucf.Idents = true
 	default:
 		fmt.Println("Must specify either 'funcs' or 'idents' command. Run with -help for more info.")
 		os.Exit(2)
 	}
 
-	unusedFuncs, err := uff.Run(flag.Args()[1:])
+	unusedFuncs, err := ucf.Run(flag.Args()[1:])
 	if err != nil {
 		fmt.Println("ERROR:", err)
 		os.Exit(1)

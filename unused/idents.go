@@ -37,14 +37,14 @@ func handleStructField(v *types.Var) (string, bool) {
 	return name, false
 }
 
-func (uff *UnusedFuncFinder) findUnusedIdents() ([]UnusedThing, error) {
+func (ucf *UnusedCodeFinder) findUnusedIdents() ([]UnusedThing, error) {
 	var conf loader.Config
-	_, err := conf.FromArgs(uff.pkgsAsArray(), uff.IncludeTests)
+	_, err := conf.FromArgs(ucf.pkgsAsArray(), ucf.IncludeTests)
 	if err != nil {
 		return nil, fmt.Errorf("error loading program data: %v", err)
 	}
 	conf.AllowErrors = true //XXX make this configurable?
-	uff.Logf("Running loader...")
+	ucf.Logf("Running loader...")
 	p, err := conf.Load()
 	if err != nil {
 		return nil, fmt.Errorf("error loading program data: %v", err)
@@ -85,7 +85,7 @@ func (uff *UnusedFuncFinder) findUnusedIdents() ([]UnusedThing, error) {
 						strings.HasPrefix(name, "Test") {
 						continue
 					}
-					if uff.ExportedOnly && !kind.Exported() {
+					if ucf.ExportedOnly && !kind.Exported() {
 						// skip unexported things if the user wishes
 						continue
 					}
@@ -93,13 +93,13 @@ func (uff *UnusedFuncFinder) findUnusedIdents() ([]UnusedThing, error) {
 					case *types.Func:
 						var isMethod bool
 						name, isMethod = handleMethodName(asType)
-						if uff.SkipMethodsAndFields && isMethod {
+						if ucf.SkipMethodsAndFields && isMethod {
 							continue
 						}
 					case *types.Var:
 						var isField bool
 						name, isField = handleStructField(asType)
-						if uff.SkipMethodsAndFields && isField {
+						if ucf.SkipMethodsAndFields && isField {
 							continue
 						}
 					}

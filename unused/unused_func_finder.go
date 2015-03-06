@@ -30,7 +30,7 @@ func (ut UnusedThing) String() string {
 	return ut.Name
 }
 
-type UnusedFuncFinder struct {
+type UnusedCodeFinder struct {
 	Callgraph []serial.CallGraph
 
 	// universal config options
@@ -50,8 +50,8 @@ type UnusedFuncFinder struct {
 	numFilesRead  int
 }
 
-func NewUnusedFunctionFinder() *UnusedFuncFinder {
-	return &UnusedFuncFinder{
+func NewUnusedCodeFinder() *UnusedCodeFinder {
+	return &UnusedCodeFinder{
 		// init private storage
 		pkgs:          map[string]struct{}{},
 		filesByCaller: map[string][]string{},
@@ -64,36 +64,36 @@ func NewUnusedFunctionFinder() *UnusedFuncFinder {
 // TODO: move this log stuff to the bottom
 // Logf is a one-off function for writing any verbose log output to
 // stderr. There might be a more idiomatic way to do this in go...
-func (uff *UnusedFuncFinder) Logf(format string, v ...interface{}) {
-	if uff.Verbose {
+func (ucf *UnusedCodeFinder) Logf(format string, v ...interface{}) {
+	if ucf.Verbose {
 		//ignore any errors in Fprintf for now
-		fmt.Fprintf(uff.LogWriter, format+"\n", v...)
+		fmt.Fprintf(ucf.LogWriter, format+"\n", v...)
 	}
 }
 
 // Errorf is a one-off function for writing any error output to
 // stderr. There might be a more idiomatic way to do this in go...
-func (uff *UnusedFuncFinder) Errorf(format string, v ...interface{}) {
-	fmt.Fprintf(uff.LogWriter, format+"\n", v...)
+func (ucf *UnusedCodeFinder) Errorf(format string, v ...interface{}) {
+	fmt.Fprintf(ucf.LogWriter, format+"\n", v...)
 }
 
 // AddPkg sets the package name as an entry in the package map,
 // here the map holds no values and functions as a hash set
-func (uff *UnusedFuncFinder) AddPkg(pkgName string) {
-	uff.pkgs[pkgName] = struct{}{}
-	uff.Logf("Found pkg %v", pkgName)
+func (ucf *UnusedCodeFinder) AddPkg(pkgName string) {
+	ucf.pkgs[pkgName] = struct{}{}
+	ucf.Logf("Found pkg %v", pkgName)
 }
 
-func (uff *UnusedFuncFinder) pkgsAsArray() []string {
-	packages := make([]string, 0, len(uff.pkgs))
-	for pkg, _ := range uff.pkgs {
+func (ucf *UnusedCodeFinder) pkgsAsArray() []string {
+	packages := make([]string, 0, len(ucf.pkgs))
+	for pkg, _ := range ucf.pkgs {
 		packages = append(packages, pkg)
 	}
 	return packages
 }
 
-func (uff *UnusedFuncFinder) getCallgraphFromOracle() error {
-	res, err := oracle.Query(uff.pkgsAsArray(), "callgraph", "", nil, &build.Default, true)
+func (ucf *UnusedCodeFinder) getCallgraphFromOracle() error {
+	res, err := oracle.Query(ucf.pkgsAsArray(), "callgraph", "", nil, &build.Default, true)
 	if err != nil {
 		return err
 	}
@@ -101,11 +101,11 @@ func (uff *UnusedFuncFinder) getCallgraphFromOracle() error {
 	if serialRes.Callgraph == nil {
 		return fmt.Errorf("no callgraph present in oracle results")
 	}
-	uff.Callgraph = serialRes.Callgraph
+	ucf.Callgraph = serialRes.Callgraph
 	return nil
 }
 
-func (uff *UnusedFuncFinder) readFuncsAndImportsFromFile(filename string) error {
+func (ucf *UnusedCodeFinder) readFuncsAndImportsFromFile(filename string) error {
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, filename, nil, 0)
 	if err != nil {
@@ -114,12 +114,12 @@ func (uff *UnusedFuncFinder) readFuncsAndImportsFromFile(filename string) error 
 
 	// check if this is a main packages or
 	// if we want to analyze everything
-	if f.Name.Name == "main" || uff.IncludeAll || uff.Idents {
+	if f.Name.Name == "main" || ucf.IncludeAll || ucf.Idents {
 		pkgName, err := getFullPkgName(filename)
 		if err != nil {
 			return fmt.Errorf("error getting main package path: %v", err)
 		}
-		uff.AddPkg(pkgName)
+		ucf.AddPkg(pkgName)
 	}
 
 	// iterate over the AST, tracking found functions
@@ -141,28 +141,28 @@ func (uff *UnusedFuncFinder) readFuncsAndImportsFromFile(filename string) error 
 			case s == "init":
 			case s == "test":
 			default:
-				uff.funcs = append(uff.funcs, UnusedThing{s, filename})
+				ucf.funcs = append(ucf.funcs, UnusedThing{s, filename})
 			}
 		}
 		return true
 	})
 
-	uff.numFilesRead++
+	ucf.numFilesRead++
 	return nil
 }
 
-func (uff *UnusedFuncFinder) computeUnusedFuncs() []UnusedThing {
+func (ucf *UnusedCodeFinder) computeUnusedFuncs() []UnusedThing {
 	unused := []UnusedThing{}
-	for _, f := range uff.funcs {
-		if !uff.isInCG(f) {
+	for _, f := range ucf.funcs {
+		if !ucf.isInCG(f) {
 			unused = append(unused, f)
 		}
 	}
 	return unused
 }
 
-func (uff *UnusedFuncFinder) isInCG(f UnusedThing) bool {
-	files, ok := uff.filesByCaller[f.Name]
+func (ucf *UnusedCodeFinder) isInCG(f UnusedThing) bool {
+	files, ok := ucf.filesByCaller[f.Name]
 	if !ok {
 		return false
 	}
@@ -174,13 +174,13 @@ func (uff *UnusedFuncFinder) isInCG(f UnusedThing) bool {
 	return false
 }
 
-func (uff *UnusedFuncFinder) buildFileMap() {
-	for _, entry := range uff.Callgraph {
+func (ucf *UnusedCodeFinder) buildFileMap() {
+	for _, entry := range ucf.Callgraph {
 		//strip off the package name for simplicity
 		//TODO, can this be left on? Try prepending func names with package?
 		idx := strings.LastIndex(entry.Name, ".") + 1
 		if idx != 0 {
-			uff.filesByCaller[entry.Name[idx:]] = append(uff.filesByCaller[entry.Name[idx:]], entry.Pos)
+			ucf.filesByCaller[entry.Name[idx:]] = append(ucf.filesByCaller[entry.Name[idx:]], entry.Pos)
 		}
 	}
 }
@@ -210,9 +210,9 @@ func getFullPkgName(filename string) (string, error) {
 	return "", fmt.Errorf("cd %q and try again", goPaths[len(goPaths)-1])
 }
 
-func (uff *UnusedFuncFinder) canReadSourceFile(filename string) bool {
-	if uff.Ignore != "" && strings.Contains(filename, uff.Ignore) { //TODO regex
-		uff.Logf("Ignoring path '%v'", filename)
+func (ucf *UnusedCodeFinder) canReadSourceFile(filename string) bool {
+	if ucf.Ignore != "" && strings.Contains(filename, ucf.Ignore) { //TODO regex
+		ucf.Logf("Ignoring path '%v'", filename)
 		return false
 	}
 	if !strings.HasSuffix(filename, ".go") {
@@ -226,17 +226,17 @@ func isNotStandardLibrary(pkg string) bool {
 	return strings.ContainsRune(pkg, '.')
 }
 
-func (uff *UnusedFuncFinder) readDir(dirname string) error {
+func (ucf *UnusedCodeFinder) readDir(dirname string) error {
 	err := filepath.Walk(dirname, func(path string, info os.FileInfo, err error) error {
-		if err == nil && !info.IsDir() && uff.canReadSourceFile(path) {
-			err = uff.readFuncsAndImportsFromFile(path)
+		if err == nil && !info.IsDir() && ucf.canReadSourceFile(path) {
+			err = ucf.readFuncsAndImportsFromFile(path)
 		}
 		return err
 	})
 	return err
 }
 
-func (uff *UnusedFuncFinder) Run(fileArgs []string) ([]UnusedThing, error) {
+func (ucf *UnusedCodeFinder) Run(fileArgs []string) ([]UnusedThing, error) {
 
 	// do some basic sanity checks on system configuration
 	if len(fileArgs) == 0 {
@@ -248,43 +248,43 @@ func (uff *UnusedFuncFinder) Run(fileArgs []string) ([]UnusedThing, error) {
 	}
 
 	// first, get all the file names and package imports
-	uff.Logf("Collecting declarations from source files")
+	ucf.Logf("Collecting declarations from source files")
 	for _, filename := range fileArgs {
 		if isDir(filename) {
-			if err := uff.readDir(filename); err != nil {
-				uff.Errorf("Error reading '%v' directory: %v", filename, err.Error())
-				uff.Errorf("Continuing...")
+			if err := ucf.readDir(filename); err != nil {
+				ucf.Errorf("Error reading '%v' directory: %v", filename, err.Error())
+				ucf.Errorf("Continuing...")
 			}
 		} else {
-			if uff.canReadSourceFile(filename) {
-				if err := uff.readFuncsAndImportsFromFile(filename); err != nil {
-					uff.Errorf("Error reading '%v' file: %v", filename, err.Error())
-					uff.Errorf("Continuing...")
+			if ucf.canReadSourceFile(filename) {
+				if err := ucf.readFuncsAndImportsFromFile(filename); err != nil {
+					ucf.Errorf("Error reading '%v' file: %v", filename, err.Error())
+					ucf.Errorf("Continuing...")
 				}
 			}
 		}
 	}
-	uff.Logf("Parsed %v source files", uff.numFilesRead)
+	ucf.Logf("Parsed %v source files", ucf.numFilesRead)
 
-	if uff.Idents {
-		return uff.findUnusedIdents()
+	if ucf.Idents {
+		return ucf.findUnusedIdents()
 	}
 
 	// then get the callgraph from the oracle
-	uff.Logf("Running callgraph analysis on following packages: \n\t%v",
-		strings.Join(uff.pkgsAsArray(), "\n\t"))
-	if err := uff.getCallgraphFromOracle(); err != nil {
-		uff.Errorf("Error getting results from oracle: %v", err.Error())
+	ucf.Logf("Running callgraph analysis on following packages: \n\t%v",
+		strings.Join(ucf.pkgsAsArray(), "\n\t"))
+	if err := ucf.getCallgraphFromOracle(); err != nil {
+		ucf.Errorf("Error getting results from oracle: %v", err.Error())
 		return nil, err
 	}
 
 	// use that callgraph to build a callgraph->file map
-	uff.buildFileMap()
+	ucf.buildFileMap()
 
 	// finally, figure out which functions are not in the graph
-	uff.Logf("Scanning callgraph for unused functions")
-	unusedFuncs := uff.computeUnusedFuncs()
+	ucf.Logf("Scanning callgraph for unused functions")
+	unusedFuncs := ucf.computeUnusedFuncs()
 
-	uff.Logf("") // assure space between log output and results
+	ucf.Logf("") // assure space between log output and results
 	return unusedFuncs, nil
 }
