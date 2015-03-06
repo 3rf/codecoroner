@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/3rf/go-unused-funcs/unused"
+	"github.com/3rf/codecoroner/unused"
 	"os"
 )
 

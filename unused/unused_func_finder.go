@@ -3,7 +3,6 @@
 package unused
 
 import (
-	"encoding/json"
 	"fmt"
 	"go/ast"
 	"go/build"
@@ -15,9 +14,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"golang.org/x/tools/oracle"
-	"golang.org/x/tools/oracle/serial"
 )
 
 var NICE = 2
@@ -84,6 +80,7 @@ func (uff *UnusedFuncFinder) Errorf(format string, v ...interface{}) {
 // here the map holds no values and functions as a hash set
 func (uff *UnusedFuncFinder) AddPkg(pkgName string) {
 	uff.pkgs[pkgName] = struct{}{}
+	uff.Logf("Found pkg %v", pkgName)
 }
 
 func (uff *UnusedFuncFinder) pkgsAsArray() []string {
@@ -102,20 +99,6 @@ func (uff *UnusedFuncFinder) getCallgraphFromOracle() error {
 	serialRes := res.Serial()
 	if serialRes.Callgraph == nil {
 		return fmt.Errorf("no callgraph present in oracle results")
-	}
-	uff.Callgraph = serialRes.Callgraph
-	return nil
-}
-
-func (uff *UnusedFuncFinder) getCallgraphFromJSON(input io.Reader) error {
-	serialRes := serial.Result{}
-	dec := json.NewDecoder(input)
-	err := dec.Decode(&serialRes)
-	if err != nil {
-		return fmt.Errorf("error reading json: %v", err)
-	}
-	if len(serialRes.Callgraph) == 0 {
-		return fmt.Errorf("no callgraph found in json input")
 	}
 	uff.Callgraph = serialRes.Callgraph
 	return nil
@@ -213,7 +196,7 @@ func getFullPkgName(filename string) (string, error) {
 	}
 	goPaths := filepath.SplitList(os.Getenv("GOPATH"))
 	for _, p := range goPaths {
-		p = filepath.Join(p, "src") + "/"
+		p = filepath.Join(p, "src") + string(filepath.Separator)
 		if !strings.HasPrefix(abs, p) {
 			continue
 		}
@@ -287,26 +270,12 @@ func (uff *UnusedFuncFinder) Run(fileArgs []string) ([]UnusedThing, error) {
 		return uff.findUnusedIdents()
 	}
 
-	// then get the callgraph from json or the oracle
-	if uff.CallgraphJSON == "" {
-		uff.Logf("Running callgraph analysis on following packages: \n\t%v",
-			strings.Join(uff.pkgsAsArray(), "\n\t"))
-		if err := uff.getCallgraphFromOracle(); err != nil {
-			uff.Errorf("Error getting results from oracle: %v", err.Error())
-			return nil, err
-		}
-	} else {
-		uff.Logf("Reading callgraph from '%v'", uff.CallgraphJSON)
-		jsonFile, err := os.Open(uff.CallgraphJSON)
-		if err != nil {
-			uff.Errorf("Error opening json file: %v", err.Error())
-			return nil, err
-		}
-		err = uff.getCallgraphFromJSON(jsonFile)
-		if err != nil {
-			uff.Errorf("Error reading callgrapg from json file: %v", err.Error())
-			return nil, err
-		}
+	// then get the callgraph from the oracle
+	uff.Logf("Running callgraph analysis on following packages: \n\t%v",
+		strings.Join(uff.pkgsAsArray(), "\n\t"))
+	if err := uff.getCallgraphFromOracle(); err != nil {
+		uff.Errorf("Error getting results from oracle: %v", err.Error())
+		return nil, err
 	}
 
 	// use that callgraph to build a callgraph->file map
