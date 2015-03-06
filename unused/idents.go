@@ -28,12 +28,24 @@ func handleMethodName(f *types.Func) (string, bool) {
 	return name, false
 }
 
+// add a naming indicator that something is a field and say if its a field
+func handleStructField(v *types.Var) (string, bool) {
+	name := v.Name()
+	if v.IsField() { // No way to get the actual ownder, why???
+		name = name + " [struct field]"
+		return name, true
+	}
+	return name, false
+}
+
 func (uff *UnusedFuncFinder) findUnusedIdents() ([]UnusedThing, error) {
 	var conf loader.Config
-	_, err := conf.FromArgs(uff.pkgsAsArray(), true)
+	_, err := conf.FromArgs(uff.pkgsAsArray(), uff.IncludeTests)
 	if err != nil {
 		return nil, fmt.Errorf("error loading program data: %v", err)
 	}
+	conf.AllowErrors = true //XXX
+	uff.Logf("Running loader...")
 	p, err := conf.Load()
 	if err != nil {
 		return nil, fmt.Errorf("error loading program data: %v", err)
@@ -49,9 +61,12 @@ func (uff *UnusedFuncFinder) findUnusedIdents() ([]UnusedThing, error) {
 			for _, kind := range info.Info.Uses {
 				if kind.Pkg() != nil {
 					name := kind.Name()
-					if asFunc, ok := kind.(*types.Func); ok {
+					switch asType := kind.(type) {
+					case *types.Func:
 						//special case for methods
-						name, _ = handleMethodName(asFunc)
+						name, _ = handleMethodName(asType)
+					case *types.Var:
+						name, _ = handleStructField(asType)
 					}
 					id := fmt.Sprintf("%s.%s", kind.Pkg().Path(), name)
 					thingToUsage[id] = thingToUsage[id] + 1
@@ -76,10 +91,17 @@ func (uff *UnusedFuncFinder) findUnusedIdents() ([]UnusedThing, error) {
 						// skip unexported things if the user wishes
 						continue
 					}
-					if asFunc, ok := kind.(*types.Func); ok {
+					switch asType := kind.(type) {
+					case *types.Func:
 						var isMethod bool
-						name, isMethod = handleMethodName(asFunc)
-						if uff.SkipMethods && isMethod {
+						name, isMethod = handleMethodName(asType)
+						if uff.SkipMethodsAndFields && isMethod {
+							continue
+						}
+					case *types.Var:
+						var isField bool
+						name, isField = handleStructField(asType)
+						if uff.SkipMethodsAndFields && isField {
 							continue
 						}
 					}

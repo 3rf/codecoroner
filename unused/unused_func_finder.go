@@ -33,15 +33,15 @@ func (ut UnusedThing) String() string {
 type UnusedFuncFinder struct {
 	Callgraph []serial.CallGraph
 
-	Ignore        string
-	Verbose       bool
-	IncludeAll    bool
-	LogWriter     io.Writer
-	CallgraphJSON string // for setting user json input (hack?)
+	Ignore     string
+	Verbose    bool
+	IncludeAll bool
+	LogWriter  io.Writer
 
-	Idents       bool
-	ExportedOnly bool
-	SkipMethods  bool
+	Idents               bool
+	ExportedOnly         bool
+	SkipMethodsAndFields bool
+	IncludeTests         bool
 
 	filesByCaller map[string][]string
 	pkgs          map[string]struct{}
@@ -105,7 +105,6 @@ func (uff *UnusedFuncFinder) getCallgraphFromOracle() error {
 }
 
 func (uff *UnusedFuncFinder) readFuncsAndImportsFromFile(filename string) error {
-
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, filename, nil, 0)
 	if err != nil {
@@ -114,7 +113,7 @@ func (uff *UnusedFuncFinder) readFuncsAndImportsFromFile(filename string) error 
 
 	// check if this is a main packages or
 	// if we want to analyze everything
-	if f.Name.Name == "main" || uff.IncludeAll {
+	if f.Name.Name == "main" || uff.IncludeAll || uff.Idents {
 		pkgName, err := getFullPkgName(filename)
 		if err != nil {
 			return fmt.Errorf("error getting main package path: %v", err)
@@ -126,9 +125,12 @@ func (uff *UnusedFuncFinder) readFuncsAndImportsFromFile(filename string) error 
 	ast.Inspect(f, func(n ast.Node) bool {
 		var s string
 		switch node := n.(type) {
+		/*case *ast.ImportSpec:
+		if uff.Idents && strings.Contains(node.Path.Value, ".") { //HACK
+			uff.AddPkg(node.Path.Value[1 : len(node.Path.Value)-1])
+		}*/
 		case *ast.FuncDecl:
-			asFunc := node
-			s = asFunc.Name.String()
+			s = node.Name.String()
 		}
 		if s != "" {
 			switch {
@@ -203,8 +205,7 @@ func getFullPkgName(filename string) (string, error) {
 		stripped := strings.TrimPrefix(abs, p)
 		return filepath.Dir(stripped), nil
 	}
-	// a check during initialization ensures that GOPATH != "" so this
-	// should be safe
+	// a check during initialization ensures that GOPATH != "" so this should be safe
 	return "", fmt.Errorf("cd %q and try again", goPaths[len(goPaths)-1])
 }
 
@@ -220,8 +221,7 @@ func (uff *UnusedFuncFinder) canReadSourceFile(filename string) bool {
 }
 
 func isNotStandardLibrary(pkg string) bool {
-	// THIS IS WRONG
-	// FIXME HACK HACK HACK
+	// THIS IS WRONG I AM LEAVING IT IN AS A TEST
 	return strings.ContainsRune(pkg, '.')
 }
 
@@ -248,7 +248,7 @@ func (uff *UnusedFuncFinder) Run(fileArgs []string) ([]UnusedThing, error) {
 	}
 
 	// first, get all the file names and package imports
-	uff.Logf("Collecting func declarations from source files")
+	uff.Logf("Collecting declarations from source files")
 	for _, filename := range fileArgs {
 		if isDir(filename) {
 			if err := uff.readDir(filename); err != nil {

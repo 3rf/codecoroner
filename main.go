@@ -19,16 +19,30 @@ func main() {
 		"includes all found packages in analysis, not just main packages")
 	flag.StringVar(&(uff.Ignore), "ignore", "",
 		"don't read files that match the given string (use to avoid /testdata, etc) ")
-	flag.StringVar(&(uff.CallgraphJSON), "callgraphjson", "",
-		"pass in a callgraph in json format instead of computing one")
-	flag.BoolVar(&(uff.Idents), "idents", false, "")
 	flag.BoolVar(&(uff.ExportedOnly), "exported", false, "")
-	flag.BoolVar(&(uff.SkipMethods), "skipmethods", false, "")
+	flag.BoolVar(&(uff.SkipMethodsAndFields), "skipmembers", false, "")
+	flag.BoolVar(&(uff.IncludeTests), "tests", false, "")
 	flag.Parse()
 
-	unusedFuncs, err := uff.Run(flag.Args())
+	if len(flag.Args()) == 0 {
+		fmt.Println("Must specify either 'funcs' or 'idents' command. Run with -help for more info.")
+		os.Exit(2)
+	}
+	command := flag.Arg(0)
+	switch command {
+	case "funcs", "functions":
+		uff.Idents = false
+	case "idents", "identifiers":
+		uff.Idents = true
+	default:
+		fmt.Println("Must specify either 'funcs' or 'idents' command. Run with -help for more info.")
+		os.Exit(2)
+	}
+
+	unusedFuncs, err := uff.Run(flag.Args()[1:])
 	if err != nil {
-		os.Exit(unused.NICE)
+		fmt.Println("ERROR", err)
+		os.Exit(1)
 	}
 
 	for _, f := range unusedFuncs {
