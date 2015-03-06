@@ -11,9 +11,9 @@ const Nothing = 6
 
 var IgnoreMe = 77
 
-// shorten the method name for nicer printing
+// shorten the method name for nicer printing and say if its a method
 //TODO unit test me XXX
-func getCleanMethodName(f *types.Func) string {
+func handleMethodName(f *types.Func) (string, bool) {
 	name := f.Name()
 	if strings.HasPrefix(f.FullName(), "(") {
 		// it's a method! let's shorten the receiver!
@@ -21,11 +21,11 @@ func getCleanMethodName(f *types.Func) string {
 		// second to last "."
 		sepIdx := strings.LastIndex(fullName[:strings.LastIndex(fullName, ".")], ".")
 		if sepIdx <= 0 { // rare special case
-			return fullName
+			return fullName, true
 		}
-		return fmt.Sprintf("(%s", fullName[sepIdx+1:])
+		return fmt.Sprintf("(%s", fullName[sepIdx+1:]), true
 	}
-	return name
+	return name, false
 }
 
 func (uff *UnusedFuncFinder) findUnusedIdents() ([]UnusedThing, error) {
@@ -44,18 +44,20 @@ func (uff *UnusedFuncFinder) findUnusedIdents() ([]UnusedThing, error) {
 
 	for key, info := range p.Imported {
 		if strings.Contains(key, ".") {
+
 			// find all used idents
 			for _, kind := range info.Info.Uses {
 				if kind.Pkg() != nil {
 					name := kind.Name()
 					if asFunc, ok := kind.(*types.Func); ok {
 						//special case for methods
-						name = getCleanMethodName(asFunc)
+						name, _ = handleMethodName(asFunc)
 					}
 					id := fmt.Sprintf("%s.%s", kind.Pkg().Path(), name)
 					thingToUsage[id] = thingToUsage[id] + 1
 				}
 			}
+
 			// find all declared idents
 			for _, kind := range info.Info.Defs {
 				if kind == nil {
@@ -75,7 +77,14 @@ func (uff *UnusedFuncFinder) findUnusedIdents() ([]UnusedThing, error) {
 						continue
 					}
 					if asFunc, ok := kind.(*types.Func); ok {
-						name = getCleanMethodName(asFunc)
+						var isMethod bool
+						name, isMethod = handleMethodName(asFunc)
+						if uff.SkipMethods && isMethod {
+							continue
+						}
+					}
+					if name == "." {
+						continue
 					}
 					id := fmt.Sprintf("%s.%s", kind.Pkg().Path(), name)
 					defined[id] = struct{}{}

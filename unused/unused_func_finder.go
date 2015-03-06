@@ -42,6 +42,7 @@ type UnusedFuncFinder struct {
 
 	Idents       bool
 	ExportedOnly bool
+	SkipMethods  bool
 
 	filesByCaller map[string][]string
 	pkgs          map[string]struct{}

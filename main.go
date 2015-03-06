@@ -22,8 +22,8 @@ func main() {
 	flag.StringVar(&(uff.CallgraphJSON), "callgraphjson", "",
 		"pass in a callgraph in json format instead of computing one")
 	flag.BoolVar(&(uff.Idents), "idents", false, "")
-	flag.BoolVar(&(uff.ExportedOnly), "exported", false,
-		"pass in a callgraph in json format instead of computing one")
+	flag.BoolVar(&(uff.ExportedOnly), "exported", false, "")
+	flag.BoolVar(&(uff.SkipMethods), "skipmethods", false, "")
 	flag.Parse()
 
 	unusedFuncs, err := uff.Run(flag.Args())
