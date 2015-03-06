@@ -18,6 +18,11 @@ import (
 
 var NICE = 2
 
+func Three() int {
+	return 3
+}
+
+// UnusedThing represents a found unused function or identifier
 type UnusedThing struct {
 	Name string
 	File string
@@ -34,7 +39,7 @@ type UnusedCodeFinder struct {
 	Callgraph []serial.CallGraph
 
 	// universal config options
-	Ignore     string
+	Ignore     []string
 	Verbose    bool
 	IncludeAll bool
 	LogWriter  io.Writer
@@ -211,7 +216,7 @@ func getFullPkgName(filename string) (string, error) {
 }
 
 func (ucf *UnusedCodeFinder) canReadSourceFile(filename string) bool {
-	if ucf.Ignore != "" && strings.Contains(filename, ucf.Ignore) { //TODO regex
+	if ucf.shouldIgnorePath(filename) {
 		ucf.Logf("Ignoring path '%v'", filename)
 		return false
 	}
@@ -224,6 +229,15 @@ func (ucf *UnusedCodeFinder) canReadSourceFile(filename string) bool {
 func isNotStandardLibrary(pkg string) bool {
 	// THIS IS WRONG I AM LEAVING IT IN AS A TEST
 	return strings.ContainsRune(pkg, '.')
+}
+
+func (ucf *UnusedCodeFinder) shouldIgnorePath(path string) bool {
+	for _, ignoreToken := range ucf.Ignore {
+		if strings.Contains(path, ignoreToken) {
+			return true
+		}
+	}
+	return false
 }
 
 func (ucf *UnusedCodeFinder) readDir(dirname string) error {

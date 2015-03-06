@@ -7,6 +7,7 @@ import (
 	"strings"
 )
 
+// This is the worst test methodology ever...soon I'll move these to /testdata/
 const Nothing = 6
 
 var IgnoreMe = 77
