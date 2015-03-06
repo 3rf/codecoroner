@@ -12,7 +12,6 @@ const Nothing = 6
 var IgnoreMe = 77
 
 // shorten the method name for nicer printing and say if its a method
-//TODO unit test me XXX
 func handleMethodName(f *types.Func) (string, bool) {
 	name := f.Name()
 	if strings.HasPrefix(f.FullName(), "(") {
@@ -44,7 +43,7 @@ func (uff *UnusedFuncFinder) findUnusedIdents() ([]UnusedThing, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error loading program data: %v", err)
 	}
-	conf.AllowErrors = true //XXX
+	conf.AllowErrors = true //XXX make this configurable?
 	uff.Logf("Running loader...")
 	p, err := conf.Load()
 	if err != nil {
@@ -86,7 +85,6 @@ func (uff *UnusedFuncFinder) findUnusedIdents() ([]UnusedThing, error) {
 						strings.HasPrefix(name, "Test") {
 						continue
 					}
-					//fmt.Printf("%#v - %s\n", kind, name)
 					if uff.ExportedOnly && !kind.Exported() {
 						// skip unexported things if the user wishes
 						continue
@@ -122,5 +120,4 @@ func (uff *UnusedFuncFinder) findUnusedIdents() ([]UnusedThing, error) {
 		}
 	}
 	return unused, nil
-
 }

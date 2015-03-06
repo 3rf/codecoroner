@@ -41,7 +41,7 @@ func main() {
 
 	unusedFuncs, err := uff.Run(flag.Args()[1:])
 	if err != nil {
-		fmt.Println("ERROR", err)
+		fmt.Println("ERROR:", err)
 		os.Exit(1)
 	}
 

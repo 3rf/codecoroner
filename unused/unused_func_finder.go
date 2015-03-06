@@ -33,6 +33,7 @@ func (ut UnusedThing) String() string {
 type UnusedFuncFinder struct {
 	Callgraph []serial.CallGraph
 
+	// universal config options
 	Ignore     string
 	Verbose    bool
 	IncludeAll bool
@@ -239,11 +240,10 @@ func (uff *UnusedFuncFinder) Run(fileArgs []string) ([]UnusedThing, error) {
 
 	// do some basic sanity checks on system configuration
 	if len(fileArgs) == 0 {
-		uff.Errorf("Must supply at least one file as an argument")
-		return nil, fmt.Errorf("no files supplied as arguments")
+		return nil, fmt.Errorf(
+			"no files supplied as arguments; must supply at least one file or directory")
 	}
 	if os.Getenv("GOPATH") == "" {
-		uff.Errorf("GOPATH environment varaible is not set")
 		return nil, fmt.Errorf("GOPATH not set")
 	}
 
