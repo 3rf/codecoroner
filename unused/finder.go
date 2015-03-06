@@ -1,14 +1,12 @@
-// The "unused" package wraps the go 'oracle' tool and provides
-// hooks for finding unused functions in a codebase
+// The "unused" package wraps the go 'oracle' and 'loader' tools and provides
+// hooks for finding unused functions and identifiers in a codebase
 package unused
 
 import (
 	"fmt"
 	"go/ast"
-	"go/build"
 	"go/parser"
 	"go/token"
-	"golang.org/x/tools/oracle"
 	"golang.org/x/tools/oracle/serial"
 	"io"
 	"os"
@@ -36,8 +34,6 @@ func (ut UnusedThing) String() string {
 }
 
 type UnusedCodeFinder struct {
-	Callgraph []serial.CallGraph
-
 	// universal config options
 	Ignore     []string
 	Verbose    bool
@@ -53,6 +49,7 @@ type UnusedCodeFinder struct {
 	pkgs          map[string]struct{}
 	funcs         []UnusedThing
 	numFilesRead  int
+	Callgraph     []serial.CallGraph
 }
 
 func NewUnusedCodeFinder() *UnusedCodeFinder {
@@ -97,19 +94,6 @@ func (ucf *UnusedCodeFinder) pkgsAsArray() []string {
 	return packages
 }
 
-func (ucf *UnusedCodeFinder) getCallgraphFromOracle() error {
-	res, err := oracle.Query(ucf.pkgsAsArray(), "callgraph", "", nil, &build.Default, true)
-	if err != nil {
-		return err
-	}
-	serialRes := res.Serial()
-	if serialRes.Callgraph == nil {
-		return fmt.Errorf("no callgraph present in oracle results")
-	}
-	ucf.Callgraph = serialRes.Callgraph
-	return nil
-}
-
 func (ucf *UnusedCodeFinder) readFuncsAndImportsFromFile(filename string) error {
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, filename, nil, 0)
@@ -131,10 +115,6 @@ func (ucf *UnusedCodeFinder) readFuncsAndImportsFromFile(filename string) error 
 	ast.Inspect(f, func(n ast.Node) bool {
 		var s string
 		switch node := n.(type) {
-		/*case *ast.ImportSpec:
-		if uff.Idents && strings.Contains(node.Path.Value, ".") { //HACK
-			uff.AddPkg(node.Path.Value[1 : len(node.Path.Value)-1])
-		}*/
 		case *ast.FuncDecl:
 			s = node.Name.String()
 		}
@@ -154,40 +134,6 @@ func (ucf *UnusedCodeFinder) readFuncsAndImportsFromFile(filename string) error 
 
 	ucf.numFilesRead++
 	return nil
-}
-
-func (ucf *UnusedCodeFinder) computeUnusedFuncs() []UnusedThing {
-	unused := []UnusedThing{}
-	for _, f := range ucf.funcs {
-		if !ucf.isInCG(f) {
-			unused = append(unused, f)
-		}
-	}
-	return unused
-}
-
-func (ucf *UnusedCodeFinder) isInCG(f UnusedThing) bool {
-	files, ok := ucf.filesByCaller[f.Name]
-	if !ok {
-		return false
-	}
-	for _, path := range files {
-		if strings.Contains(path, f.File) {
-			return true
-		}
-	}
-	return false
-}
-
-func (ucf *UnusedCodeFinder) buildFileMap() {
-	for _, entry := range ucf.Callgraph {
-		//strip off the package name for simplicity
-		//TODO, can this be left on? Try prepending func names with package?
-		idx := strings.LastIndex(entry.Name, ".") + 1
-		if idx != 0 {
-			ucf.filesByCaller[entry.Name[idx:]] = append(ucf.filesByCaller[entry.Name[idx:]], entry.Pos)
-		}
-	}
 }
 
 // helper for directory traversal
