@@ -183,6 +183,10 @@ func (ucf *UnusedCodeFinder) shouldIgnorePath(path string) bool {
 			return true
 		}
 	}
+	// skip test pkgs if -tests=false
+	if !ucf.IncludeTests && strings.HasSuffix(path, "_test.go") {
+		return true
+	}
 	return false
 }
 
