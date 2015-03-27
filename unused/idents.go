@@ -7,11 +7,6 @@ import (
 	"strings"
 )
 
-// This is the worst test methodology ever...soon I'll move these to /testdata/
-const Nothing = 6
-
-var IgnoreMe = 77
-
 // shorten the method name for nicer printing and say if its a method
 func handleMethodName(f *types.Func) (string, bool) {
 	name := f.Name()
@@ -57,7 +52,7 @@ func (ucf *UnusedCodeFinder) findUnusedIdents() ([]UnusedThing, error) {
 	for key, info := range p.Imported {
 		if strings.Contains(key, ".") {
 
-			// find all used idents
+			// find all *used* idents
 			for _, kind := range info.Info.Uses {
 				if kind.Pkg() != nil {
 					name := kind.Name()
@@ -73,7 +68,7 @@ func (ucf *UnusedCodeFinder) findUnusedIdents() ([]UnusedThing, error) {
 				}
 			}
 
-			// find all declared idents
+			// find all *declared* idents
 			for _, kind := range info.Info.Defs {
 				if kind == nil {
 					continue

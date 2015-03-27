@@ -38,7 +38,7 @@ func GenUInt() uint {
 }
 
 // This function is only used in testing, so it should only be found
-// when tests are included.
+// when tests are not included.
 func GenSix() int {
 	return Six
 }

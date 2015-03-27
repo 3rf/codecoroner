@@ -8,22 +8,18 @@ import (
 	"strings"
 )
 
-func Two() int {
-	return unused.Nothing
-}
-
 func main() {
 	var ignoreList string
 	ucf := unused.NewUnusedCodeFinder()
 	flag.BoolVar(&(ucf.Verbose), "v", false,
 		"prints extra information during execution to stderr")
 	flag.BoolVar(&(ucf.IncludeAll), "all", false,
-		"includes all found packages in analysis, not just main packages")
+		"includes all found packages in analysis, not just main packages (funcs only)")
 	flag.StringVar(&(ignoreList), "ignore", "",
 		"don't read files that contain the given comma-seperated strings (use to avoid /testdata, etc) ")
-	flag.BoolVar(&(ucf.ExportedOnly), "exported", false, "")
-	flag.BoolVar(&(ucf.SkipMethodsAndFields), "skipmembers", false, "")
-	flag.BoolVar(&(ucf.IncludeTests), "tests", false, "")
+	flag.BoolVar(&(ucf.ExportedOnly), "exported", false, "only include exported identifiers in results")
+	flag.BoolVar(&(ucf.SkipMethodsAndFields), "skipmembers", false, "ignore unused struct fields and methods (idents only)")
+	flag.BoolVar(&(ucf.IncludeTests), "tests", false, "include tests in the analysis")
 	flag.Parse()
 	// handle ignore list
 	ucf.Ignore = strings.Split(ignoreList, ",")

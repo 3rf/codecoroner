@@ -14,12 +14,6 @@ import (
 	"strings"
 )
 
-var NICE = 2
-
-func Three() int {
-	return 3
-}
-
 // UnusedThing represents a found unused function or identifier
 type UnusedThing struct {
 	Name string
@@ -170,11 +164,6 @@ func (ucf *UnusedCodeFinder) canReadSourceFile(filename string) bool {
 		return false
 	}
 	return true
-}
-
-func isNotStandardLibrary(pkg string) bool {
-	// THIS IS WRONG I AM LEAVING IT IN AS A TEST
-	return strings.ContainsRune(pkg, '.')
 }
 
 func (ucf *UnusedCodeFinder) shouldIgnorePath(path string) bool {
