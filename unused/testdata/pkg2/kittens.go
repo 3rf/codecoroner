@@ -8,10 +8,10 @@ import (
 )
 
 // this type and its method should be found by [idents]
-type unusedType struct{ a int }
+type unusedType struct{ field int }
 
 func (ut unusedType) Val() int {
-	return ut.a
+	return 2
 }
 
 // This function should not be found, as it is used.

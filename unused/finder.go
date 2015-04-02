@@ -35,7 +35,6 @@ type UnusedCodeFinder struct {
 	IncludeAll bool
 	LogWriter  io.Writer
 
-	ExportedOnly         bool
 	SkipMethodsAndFields bool
 	IncludeTests         bool
 

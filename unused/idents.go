@@ -81,10 +81,6 @@ func (ucf *UnusedCodeFinder) findUnusedIdents() ([]UnusedThing, error) {
 						strings.HasPrefix(name, "Test") {
 						continue
 					}
-					if ucf.ExportedOnly && !kind.Exported() {
-						// skip unexported things if the user wishes
-						continue
-					}
 					switch asType := kind.(type) {
 					case *types.Func:
 						var isMethod bool
