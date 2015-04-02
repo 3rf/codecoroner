@@ -6,6 +6,10 @@ import (
 	"github.com/3rf/codecoroner/unused/testdata/pkg2"
 )
 
+func init() {
+	// do nothing
+}
+
 // this function should be found by both modes,
 // the "unusedParam" parameter should be found by [idents]
 func oldHelper(str string, unusedParam uintptr) int {

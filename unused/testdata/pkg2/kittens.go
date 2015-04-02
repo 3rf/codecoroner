@@ -7,6 +7,13 @@ import (
 	"github.com/3rf/codecoroner/unused/testdata/pkg1"
 )
 
+// this type and its method should be found by [idents]
+type unusedType struct{ a int }
+
+func (ut unusedType) Val() int {
+	return ut.a
+}
+
 // This function should not be found, as it is used.
 func ColorKittenLink() string {
 	return fmt.Sprintf("http://placekitten.com/%v/%v",

@@ -29,12 +29,12 @@ func (ut UnusedThing) String() string {
 
 type UnusedCodeFinder struct {
 	// universal config options
+	Idents     bool
 	Ignore     []string
 	Verbose    bool
 	IncludeAll bool
 	LogWriter  io.Writer
 
-	Idents               bool
 	ExportedOnly         bool
 	SkipMethodsAndFields bool
 	IncludeTests         bool

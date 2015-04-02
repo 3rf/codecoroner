@@ -4,6 +4,7 @@ import (
 	"fmt"
 	. "github.com/smartystreets/goconvey/convey"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -20,7 +21,7 @@ func ShouldBeFoundIn(actual interface{}, expected ...interface{}) string {
 	target := actual.(string)
 	results := expected[0].([]UnusedThing)
 	for _, thing := range results {
-		if thing.Name == target {
+		if strings.HasSuffix(thing.Name, target) {
 			return ""
 		}
 	}
@@ -32,7 +33,7 @@ func ShouldNotBeFoundIn(actual interface{}, expected ...interface{}) string {
 	target := actual.(string)
 	results := expected[0].([]UnusedThing)
 	for _, thing := range results {
-		if thing.Name == target {
+		if strings.HasSuffix(thing.Name, target) {
 			return fmt.Sprintf("found '%v' in results (it shouldn't be there)", target)
 		}
 	}
@@ -57,6 +58,7 @@ func TestUnusedFuncsWithMain(t *testing.T) {
 				So("GenInt", ShouldNotBeFoundIn, results)
 				So("GenIntMod400", ShouldNotBeFoundIn, results)
 				So("ColorKittenLink", ShouldNotBeFoundIn, results)
+				So("init", ShouldNotBeFoundIn, results)
 			})
 		})
 	})
@@ -77,6 +79,33 @@ func TestUnusedFuncsWithAll(t *testing.T) {
 				So("GenUInt", ShouldBeFoundIn, results)
 				So("toUint", ShouldBeFoundIn, results)
 				So("GrayKittenLink", ShouldBeFoundIn, results)
+				So("testhelper", ShouldNotBeFoundIn, results)
+			})
+
+			Convey("but GenSix should not be found, since it is used in a test", func() {
+				So("GenSix", ShouldNotBeFoundIn, results)
+			})
+		})
+	})
+}
+
+func TestUnusedFuncsWithTests(t *testing.T) {
+	Convey("with a test main package and a UnusedCodeFinder with -all -tests", t, func() {
+		ucf := NewUnusedCodeFinder()
+		So(ucf, ShouldNotBeNil)
+		ucf.IncludeTests = true
+		ucf.IncludeAll = true
+
+		Convey("running 'funcs'", func() {
+			results, err := ucf.Run([]string{"testdata"})
+			So(err, ShouldBeNil)
+
+			Convey("all functions that are unused by any pkg or test are found", func() {
+				So("oldHelper", ShouldBeFoundIn, results)
+				So("GenUInt", ShouldBeFoundIn, results)
+				So("toUint", ShouldBeFoundIn, results)
+				So("GrayKittenLink", ShouldBeFoundIn, results)
+				So("testhelper", ShouldBeFoundIn, results)
 			})
 
 			Convey("but GenSix should not be found, since it is used in a test", func() {
