@@ -39,8 +39,8 @@ func (ucf *UnusedCodeFinder) findUnusedIdents() ([]UnusedThing, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error loading program data: %v", err)
 	}
-	conf.AllowErrors = true //XXX make this configurable?
-	ucf.Logf("Running loader...")
+	conf.AllowErrors = true //TODO make this configurable?
+	ucf.Logf("Running loader")
 	p, err := conf.Load()
 	if err != nil {
 		return nil, fmt.Errorf("error loading program data: %v", err)

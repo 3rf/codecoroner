@@ -4,6 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"github.com/3rf/codecoroner/unused"
+	"go/build"
+	"golang.org/x/tools/go/buildutil"
 	"os"
 	"strings"
 )
@@ -16,9 +18,9 @@ func main() {
 	flag.BoolVar(&(ucf.IncludeTests), "tests", false, "include tests in the analysis")
 	flag.StringVar(&(ignoreList), "ignore", "",
 		"don't read files that contain the given comma-seperated strings (use to avoid /testdata, etc) ")
-	flag.BoolVar(&(ucf.IncludeAll), "all", false,
-		"includes all found packages in analysis, not just main packages (funcs only)")
 	flag.BoolVar(&(ucf.SkipMethodsAndFields), "skipmembers", false, "ignore unused struct fields and methods (idents only)")
+	// hack for testing code with build flags
+	flag.Var((*buildutil.TagsFlag)(&build.Default.BuildTags), "tags", "a list of build tags")
 	flag.Parse()
 	// handle ignore list
 	ucf.Ignore = strings.Split(ignoreList, ",")
@@ -47,7 +49,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Println()
 	for _, f := range unusedFuncs {
 		fmt.Printf("%s\n", f)
 	}

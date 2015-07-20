@@ -64,37 +64,11 @@ func TestUnusedFuncsWithMain(t *testing.T) {
 	})
 }
 
-func TestUnusedFuncsWithAll(t *testing.T) {
-	Convey("with a test main package and a UnusedCodeFinder with -all", t, func() {
-		ucf := NewUnusedCodeFinder()
-		So(ucf, ShouldNotBeNil)
-		ucf.IncludeAll = true
-
-		Convey("running 'funcs'", func() {
-			results, err := ucf.Run([]string{"testdata"})
-			So(err, ShouldBeNil)
-
-			Convey("all functions that are unused by any pkg are found", func() {
-				So("oldHelper", ShouldBeFoundIn, results)
-				So("GenUInt", ShouldBeFoundIn, results)
-				So("toUint", ShouldBeFoundIn, results)
-				So("GrayKittenLink", ShouldBeFoundIn, results)
-				So("testhelper", ShouldNotBeFoundIn, results)
-			})
-
-			Convey("but GenSix should not be found, since it is used in a test", func() {
-				So("GenSix", ShouldNotBeFoundIn, results)
-			})
-		})
-	})
-}
-
 func TestUnusedFuncsWithTests(t *testing.T) {
-	Convey("with a test main package and a UnusedCodeFinder with -all -tests", t, func() {
+	Convey("with a test main package and a UnusedCodeFinder with -tests", t, func() {
 		ucf := NewUnusedCodeFinder()
 		So(ucf, ShouldNotBeNil)
 		ucf.IncludeTests = true
-		ucf.IncludeAll = true
 
 		Convey("running 'funcs'", func() {
 			results, err := ucf.Run([]string{"testdata"})

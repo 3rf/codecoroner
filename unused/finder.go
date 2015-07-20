@@ -1,4 +1,4 @@
-// The "unused" package wraps the go 'oracle' and 'loader' tools and provides
+// The "unused" package wraps the go's static anaylsis packages and provides
 // hooks for finding unused functions and identifiers in a codebase
 package unused
 
@@ -7,7 +7,6 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
-	"golang.org/x/tools/oracle/serial"
 	"io"
 	"os"
 	"path/filepath"
@@ -29,11 +28,10 @@ func (ut UnusedThing) String() string {
 
 type UnusedCodeFinder struct {
 	// universal config options
-	Idents     bool
-	Ignore     []string
-	Verbose    bool
-	IncludeAll bool
-	LogWriter  io.Writer
+	Idents    bool
+	Ignore    []string
+	Verbose   bool
+	LogWriter io.Writer
 
 	SkipMethodsAndFields bool
 	IncludeTests         bool
@@ -42,7 +40,6 @@ type UnusedCodeFinder struct {
 	pkgs          map[string]struct{}
 	funcs         []UnusedThing
 	numFilesRead  int
-	Callgraph     []serial.CallGraph
 }
 
 func NewUnusedCodeFinder() *UnusedCodeFinder {
@@ -96,7 +93,7 @@ func (ucf *UnusedCodeFinder) readFuncsAndImportsFromFile(filename string) error 
 
 	// check if this is a main packages or
 	// if we want to analyze everything
-	if f.Name.Name == "main" || ucf.IncludeAll || ucf.Idents {
+	if f.Name.Name == "main" || ucf.Idents || ucf.IncludeTests {
 		pkgName, err := getFullPkgName(filename)
 		if err != nil {
 			return fmt.Errorf("error getting main package path: %v", err)
@@ -218,20 +215,19 @@ func (ucf *UnusedCodeFinder) Run(fileArgs []string) ([]UnusedThing, error) {
 	}
 	ucf.Logf("Parsed %v source files", ucf.numFilesRead)
 
+	// run identifier analysis if that's what the user wants
+	// TODO make this a switch to properly give weight to this codepath
 	if ucf.Idents {
 		return ucf.findUnusedIdents()
 	}
 
-	// then get the callgraph from the oracle
+	// get the callgraph if we are doing this the hard way
 	ucf.Logf("Running callgraph analysis on following packages: \n\t%v",
 		strings.Join(ucf.pkgsAsArray(), "\n\t"))
-	if err := ucf.getCallgraphFromOracle(); err != nil {
-		ucf.Errorf("Error getting results from oracle: %v", err.Error())
+	if err := ucf.getCallgraph(); err != nil {
+		ucf.Errorf("Error running callgraph analysis: %v", err.Error())
 		return nil, err
 	}
-
-	// use that callgraph to build a callgraph->file map
-	ucf.buildFileMap()
 
 	// finally, figure out which functions are not in the graph
 	ucf.Logf("Scanning callgraph for unused functions")
