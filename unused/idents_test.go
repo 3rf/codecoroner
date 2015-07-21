@@ -21,7 +21,7 @@ func TestUnusedIdentsWithMain(t *testing.T) {
 				So("GenSix", ShouldBeFoundIn, results)
 				So("GenUInt", ShouldBeFoundIn, results)
 				So("(unusedType).Val", ShouldBeFoundIn, results)
-				So("field [struct field]", ShouldBeFoundIn, results)
+				So("field", ShouldBeFoundIn, results)
 				So("GrayKittenLink", ShouldBeFoundIn, results)
 				So("oldHelper", ShouldBeFoundIn, results)
 				So("unusedParam", ShouldBeFoundIn, results)
@@ -55,7 +55,7 @@ func TestUnusedIdentsWithTests(t *testing.T) {
 				So("AnotherNumber", ShouldBeFoundIn, results)
 				So("GenUInt", ShouldBeFoundIn, results)
 				So("(unusedType).Val", ShouldBeFoundIn, results)
-				So("field [struct field]", ShouldBeFoundIn, results)
+				So("field", ShouldBeFoundIn, results)
 				So("GrayKittenLink", ShouldBeFoundIn, results)
 				So("oldHelper", ShouldBeFoundIn, results)
 				So("unusedParam", ShouldBeFoundIn, results)
@@ -75,32 +75,6 @@ func TestUnusedIdentsWithTests(t *testing.T) {
 	})
 }
 
-func TestUnusedIdentsWithSkipMembers(t *testing.T) {
-	Convey("with a test main package and a default UnusedCodeFinder", t, func() {
-		ucf := NewUnusedCodeFinder()
-		So(ucf, ShouldNotBeNil)
-		ucf.Idents = true
-		ucf.SkipMethodsAndFields = true
-
-		Convey("running 'idents' with -skipmember", func() {
-			results, err := ucf.Run([]string{"testdata"})
-			So(err, ShouldBeNil)
-
-			Convey("no methods or fields should be found", func() {
-				So("(unusedType).Val", ShouldNotBeFoundIn, results)
-				So("field [struct field]", ShouldNotBeFoundIn, results)
-
-				Convey("but other idents should be found", func() {
-					So("Number", ShouldBeFoundIn, results)
-					So("AnotherNumber", ShouldBeFoundIn, results)
-					So("GenUInt", ShouldBeFoundIn, results)
-					So("GrayKittenLink", ShouldBeFoundIn, results)
-				})
-			})
-		})
-	})
-}
-
 func TestUnusedIdentsWithIgnore(t *testing.T) {
 	Convey("with a test main package and a default UnusedCodeFinder", t, func() {
 		ucf := NewUnusedCodeFinder()
@@ -109,8 +83,6 @@ func TestUnusedIdentsWithIgnore(t *testing.T) {
 		ucf.Ignore = []string{"pkg1", "pkg2"}
 
 		Convey("running 'idents' with -ignore to skip pkg1 and pk2", func() {
-			Println()
-			Println("[this might spam stderr]")
 			results, err := ucf.Run([]string{"testdata"})
 			So(err, ShouldBeNil)
 

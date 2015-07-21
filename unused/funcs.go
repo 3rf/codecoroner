@@ -22,8 +22,6 @@ func (ucf *UnusedCodeFinder) findUnusedFuncs() ([]UnusedObject, error) {
 	// finally, figure out which functions are not in the graph
 	ucf.Logf("Scanning callgraph for unused functions")
 	unusedFuncs := ucf.computeUnusedFuncs()
-
-	ucf.Logf("") // assure space between log output and results
 	return unusedFuncs, nil
 }
 

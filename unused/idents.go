@@ -9,7 +9,7 @@ import (
 )
 
 // shorten the method name for nicer printing and say if its a method
-func handleMethodName(f *types.Func) (string, bool) {
+func handleMethodName(f *types.Func) string {
 	name := f.Name()
 	if strings.HasPrefix(f.FullName(), "(") {
 		// it's a method! let's shorten the receiver!
@@ -17,21 +17,11 @@ func handleMethodName(f *types.Func) (string, bool) {
 		// second to last "."
 		sepIdx := strings.LastIndex(fullName[:strings.LastIndex(fullName, ".")], ".")
 		if sepIdx <= 0 { // rare special case
-			return fullName, true
+			return fullName
 		}
-		return fmt.Sprintf("(%s", fullName[sepIdx+1:]), true
+		return fmt.Sprintf("(%s", fullName[sepIdx+1:])
 	}
-	return name, false
-}
-
-// add a naming indicator that something is a field and say if its a field
-func handleStructField(v *types.Var) (string, bool) {
-	name := v.Name()
-	if v.IsField() { // No way to get the actual owner, why???
-		name = name + " [struct field]"
-		return name, true
-	}
-	return name, false
+	return name
 }
 
 type ident struct {
@@ -65,9 +55,7 @@ func (ucf *UnusedCodeFinder) findUnusedIdents() ([]UnusedObject, error) {
 					switch asType := kind.(type) {
 					case *types.Func:
 						//special case for methods
-						name, _ = handleMethodName(asType)
-					case *types.Var:
-						name, _ = handleStructField(asType)
+						name = handleMethodName(asType)
 					}
 					id := ident{Name: name, Pos: kind.Pos()}
 					identToUsage[id] = identToUsage[id] + 1
@@ -89,17 +77,7 @@ func (ucf *UnusedCodeFinder) findUnusedIdents() ([]UnusedObject, error) {
 					}
 					switch asType := kind.(type) {
 					case *types.Func:
-						var isMethod bool
-						name, isMethod = handleMethodName(asType)
-						if ucf.SkipMethodsAndFields && isMethod {
-							continue
-						}
-					case *types.Var:
-						var isField bool
-						name, isField = handleStructField(asType)
-						if ucf.SkipMethodsAndFields && isField {
-							continue
-						}
+						name = handleMethodName(asType)
 					}
 					if name == "." {
 						continue
