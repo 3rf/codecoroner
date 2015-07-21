@@ -197,7 +197,13 @@ func (ucf *UnusedCodeFinder) Run(fileArgs []string) ([]UnusedObject, error) {
 	// first, get all the file names and package imports
 	ucf.Logf("Collecting declarations from source files")
 	for _, filename := range fileArgs {
-		if isDir(filename) {
+		if strings.HasSuffix(filename, "/...") && isDir(filename[:len(filename)-4]) {
+			// go tool ./... style
+			if err := ucf.readDir(filename[:len(filename)-4]); err != nil {
+				ucf.Errorf("Error reading '...': %v", err.Error())
+				ucf.Errorf("Continuing...")
+			}
+		} else if isDir(filename) {
 			if err := ucf.readDir(filename); err != nil {
 				ucf.Errorf("Error reading '%v' directory: %v", filename, err.Error())
 				ucf.Errorf("Continuing...")
