@@ -9,6 +9,24 @@ import (
 	"strings"
 )
 
+// main method for running callgraph-based unused code analysis
+func (ucf *UnusedCodeFinder) findUnusedFuncs() ([]UnusedObject, error) {
+	// get the callgraph if we are doing this the hard way
+	ucf.Logf("Running callgraph analysis on following packages: \n\t%v",
+		strings.Join(ucf.pkgsAsArray(), "\n\t"))
+	if err := ucf.getCallgraph(); err != nil {
+		ucf.Errorf("Error running callgraph analysis: %v", err.Error())
+		return nil, err
+	}
+
+	// finally, figure out which functions are not in the graph
+	ucf.Logf("Scanning callgraph for unused functions")
+	unusedFuncs := ucf.computeUnusedFuncs()
+
+	ucf.Logf("") // assure space between log output and results
+	return unusedFuncs, nil
+}
+
 func (ucf *UnusedCodeFinder) getCallgraph() error {
 	var conf loader.Config
 	_, err := conf.FromArgs(ucf.pkgsAsArray(), ucf.IncludeTests)
@@ -35,23 +53,23 @@ func (ucf *UnusedCodeFinder) getCallgraph() error {
 
 	// build a simplified callgraph map for name->filenames
 	for node, _ := range res.Reachable {
-		position := ssaP.Fset.Position(node.Pos()).Filename
+		position := ssaP.Fset.Position(node.Pos())
 		ucf.filesByCaller[node.Name()] = append(ucf.filesByCaller[node.Name()], position)
 	}
 	return nil
 }
 
-func (ucf *UnusedCodeFinder) isInCG(f UnusedThing) bool {
-	for _, filepath := range ucf.filesByCaller[f.Name] {
-		if strings.Contains(filepath, f.File) {
+func (ucf *UnusedCodeFinder) isInCG(f UnusedObject) bool {
+	for _, pos := range ucf.filesByCaller[f.Name] {
+		if strings.Contains(pos.Filename, f.Position.Filename) {
 			return true
 		}
 	}
 	return false
 }
 
-func (ucf *UnusedCodeFinder) computeUnusedFuncs() []UnusedThing {
-	unused := []UnusedThing{}
+func (ucf *UnusedCodeFinder) computeUnusedFuncs() []UnusedObject {
+	unused := []UnusedObject{}
 	for _, f := range ucf.funcs {
 		if !ucf.isInCG(f) {
 			unused = append(unused, f)

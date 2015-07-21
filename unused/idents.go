@@ -2,6 +2,7 @@ package unused
 
 import (
 	"fmt"
+	"go/token"
 	"golang.org/x/tools/go/loader"
 	"golang.org/x/tools/go/types"
 	"strings"
@@ -26,31 +27,36 @@ func handleMethodName(f *types.Func) (string, bool) {
 // add a naming indicator that something is a field and say if its a field
 func handleStructField(v *types.Var) (string, bool) {
 	name := v.Name()
-	if v.IsField() { // No way to get the actual ownder, why???
+	if v.IsField() { // No way to get the actual owner, why???
 		name = name + " [struct field]"
 		return name, true
 	}
 	return name, false
 }
 
-func (ucf *UnusedCodeFinder) findUnusedIdents() ([]UnusedThing, error) {
+type ident struct {
+	Name string
+	Pos  token.Pos
+}
+
+func (ucf *UnusedCodeFinder) findUnusedIdents() ([]UnusedObject, error) {
 	var conf loader.Config
 	_, err := conf.FromArgs(ucf.pkgsAsArray(), ucf.IncludeTests)
 	if err != nil {
 		return nil, fmt.Errorf("error loading program data: %v", err)
 	}
-	conf.AllowErrors = true //TODO make this configurable?
+	conf.AllowErrors = true
 	ucf.Logf("Running loader")
 	p, err := conf.Load()
 	if err != nil {
 		return nil, fmt.Errorf("error loading program data: %v", err)
 	}
 
-	thingToUsage := map[string]int{}
-	defined := map[string]struct{}{}
+	identToUsage := map[ident]int{}
+	defined := map[ident]struct{}{}
 
 	for key, info := range p.Imported {
-		if strings.Contains(key, ".") {
+		if strings.Contains(key, ".") { //TODO do we need this if?
 
 			// find all *used* idents
 			for _, kind := range info.Info.Uses {
@@ -63,8 +69,8 @@ func (ucf *UnusedCodeFinder) findUnusedIdents() ([]UnusedThing, error) {
 					case *types.Var:
 						name, _ = handleStructField(asType)
 					}
-					id := fmt.Sprintf("%s.%s", kind.Pkg().Path(), name)
-					thingToUsage[id] = thingToUsage[id] + 1
+					id := ident{Name: name, Pos: kind.Pos()}
+					identToUsage[id] = identToUsage[id] + 1
 				}
 			}
 
@@ -98,17 +104,20 @@ func (ucf *UnusedCodeFinder) findUnusedIdents() ([]UnusedThing, error) {
 					if name == "." {
 						continue
 					}
-					id := fmt.Sprintf("%s.%s", kind.Pkg().Path(), name)
+					id := ident{Name: name, Pos: kind.Pos()}
 					defined[id] = struct{}{}
 				}
 			}
 		}
 	}
-	unused := []UnusedThing{}
+	unused := []UnusedObject{}
 	// see which declared idents are not actually used
 	for key, _ := range defined {
-		if _, exists := thingToUsage[key]; !exists {
-			unused = append(unused, UnusedThing{Name: key})
+		if _, exists := identToUsage[key]; !exists {
+			unused = append(unused, UnusedObject{
+				Name:     key.Name,
+				Position: p.Fset.Position(key.Pos),
+			})
 		}
 	}
 	return unused, nil

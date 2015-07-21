@@ -7,6 +7,7 @@ import (
 	"go/build"
 	"golang.org/x/tools/go/buildutil"
 	"os"
+	"sort"
 	"strings"
 )
 
@@ -43,13 +44,14 @@ func main() {
 		os.Exit(2)
 	}
 
-	unusedFuncs, err := ucf.Run(flag.Args()[1:])
+	unusedObjects, err := ucf.Run(flag.Args()[1:])
 	if err != nil {
 		fmt.Println("ERROR:", err)
 		os.Exit(1)
 	}
 
-	for _, f := range unusedFuncs {
-		fmt.Printf("%s\n", f)
+	sort.Sort(unused.ByPosition(unusedObjects))
+	for _, o := range unusedObjects {
+		fmt.Printf("%s\n", o)
 	}
 }

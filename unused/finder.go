@@ -13,19 +13,6 @@ import (
 	"strings"
 )
 
-// UnusedThing represents a found unused function or identifier
-type UnusedThing struct {
-	Name string
-	File string
-}
-
-func (ut UnusedThing) String() string {
-	if ut.File != "" {
-		return fmt.Sprintf("%s in '%s'", ut.Name, ut.File)
-	}
-	return ut.Name
-}
-
 type UnusedCodeFinder struct {
 	// universal config options
 	Idents    bool
@@ -36,9 +23,9 @@ type UnusedCodeFinder struct {
 	SkipMethodsAndFields bool
 	IncludeTests         bool
 
-	filesByCaller map[string][]string
+	filesByCaller map[string][]token.Position
 	pkgs          map[string]struct{}
-	funcs         []UnusedThing
+	funcs         []UnusedObject
 	numFilesRead  int
 }
 
@@ -46,8 +33,8 @@ func NewUnusedCodeFinder() *UnusedCodeFinder {
 	return &UnusedCodeFinder{
 		// init private storage
 		pkgs:          map[string]struct{}{},
-		filesByCaller: map[string][]string{},
-		funcs:         []UnusedThing{},
+		filesByCaller: map[string][]token.Position{},
+		funcs:         []UnusedObject{},
 		// default to stderr; this can be overwritten before Run() is called
 		LogWriter: os.Stderr,
 	}
@@ -116,7 +103,7 @@ func (ucf *UnusedCodeFinder) readFuncsAndImportsFromFile(filename string) error 
 			case s == "init":
 			case s == "test":
 			default:
-				ucf.funcs = append(ucf.funcs, UnusedThing{s, filename})
+				ucf.funcs = append(ucf.funcs, UnusedObject{s, fset.Position(n.Pos())})
 			}
 		}
 		return true
@@ -138,17 +125,28 @@ func getFullPkgName(filename string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	goPaths := filepath.SplitList(os.Getenv("GOPATH"))
-	for _, p := range goPaths {
-		p = filepath.Join(p, "src") + string(filepath.Separator)
-		if !strings.HasPrefix(abs, p) {
-			continue
-		}
-		stripped := strings.TrimPrefix(abs, p)
+	// strip the GOPATH. Error if this doesn't work.
+	stripped := trimGopath(abs)
+	if stripped != filename {
 		return filepath.Dir(stripped), nil
 	}
 	// a check during initialization ensures that GOPATH != "" so this should be safe
+	goPaths := filepath.SplitList(os.Getenv("GOPATH"))
 	return "", fmt.Errorf("cd %q and try again", goPaths[len(goPaths)-1])
+}
+
+// trimGopath removes the GOPATH from a filepath, for simplicity
+func trimGopath(filename string) string {
+	goPaths := filepath.SplitList(os.Getenv("GOPATH"))
+	for _, p := range goPaths {
+		p = filepath.Join(p, "src") + string(filepath.Separator)
+		if !strings.HasPrefix(filename, p) {
+			continue
+		}
+		stripped := strings.TrimPrefix(filename, p)
+		return stripped
+	}
+	return filename
 }
 
 func (ucf *UnusedCodeFinder) canReadSourceFile(filename string) bool {
@@ -185,7 +183,7 @@ func (ucf *UnusedCodeFinder) readDir(dirname string) error {
 	return err
 }
 
-func (ucf *UnusedCodeFinder) Run(fileArgs []string) ([]UnusedThing, error) {
+func (ucf *UnusedCodeFinder) Run(fileArgs []string) ([]UnusedObject, error) {
 
 	// do some basic sanity checks on system configuration
 	if len(fileArgs) == 0 {
@@ -215,24 +213,8 @@ func (ucf *UnusedCodeFinder) Run(fileArgs []string) ([]UnusedThing, error) {
 	}
 	ucf.Logf("Parsed %v source files", ucf.numFilesRead)
 
-	// run identifier analysis if that's what the user wants
-	// TODO make this a switch to properly give weight to this codepath
 	if ucf.Idents {
 		return ucf.findUnusedIdents()
 	}
-
-	// get the callgraph if we are doing this the hard way
-	ucf.Logf("Running callgraph analysis on following packages: \n\t%v",
-		strings.Join(ucf.pkgsAsArray(), "\n\t"))
-	if err := ucf.getCallgraph(); err != nil {
-		ucf.Errorf("Error running callgraph analysis: %v", err.Error())
-		return nil, err
-	}
-
-	// finally, figure out which functions are not in the graph
-	ucf.Logf("Scanning callgraph for unused functions")
-	unusedFuncs := ucf.computeUnusedFuncs()
-
-	ucf.Logf("") // assure space between log output and results
-	return unusedFuncs, nil
+	return ucf.findUnusedFuncs()
 }

@@ -16,13 +16,13 @@ func TestUnusedIdentsWithMain(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			Convey("all idents in pkg1, pkg2, and main should be found", func() {
-				So("pkg1.Number", ShouldBeFoundIn, results)
-				So("pkg1.AnotherNumber", ShouldBeFoundIn, results)
-				So("pkg1.GenSix", ShouldBeFoundIn, results)
-				So("pkg1.GenUInt", ShouldBeFoundIn, results)
-				So("pkg2.(unusedType).Val", ShouldBeFoundIn, results)
-				So("pkg2.field [struct field]", ShouldBeFoundIn, results)
-				So("pkg2.GrayKittenLink", ShouldBeFoundIn, results)
+				So("Number", ShouldBeFoundIn, results)
+				So("AnotherNumber", ShouldBeFoundIn, results)
+				So("GenSix", ShouldBeFoundIn, results)
+				So("GenUInt", ShouldBeFoundIn, results)
+				So("(unusedType).Val", ShouldBeFoundIn, results)
+				So("field [struct field]", ShouldBeFoundIn, results)
+				So("GrayKittenLink", ShouldBeFoundIn, results)
 				So("oldHelper", ShouldBeFoundIn, results)
 				So("unusedParam", ShouldBeFoundIn, results)
 
@@ -51,12 +51,12 @@ func TestUnusedIdentsWithTests(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			Convey("all idents in pkg1, pkg2, and main should be found", func() {
-				So("pkg1.Number", ShouldBeFoundIn, results)
-				So("pkg1.AnotherNumber", ShouldBeFoundIn, results)
-				So("pkg1.GenUInt", ShouldBeFoundIn, results)
-				So("pkg2.(unusedType).Val", ShouldBeFoundIn, results)
-				So("pkg2.field [struct field]", ShouldBeFoundIn, results)
-				So("pkg2.GrayKittenLink", ShouldBeFoundIn, results)
+				So("Number", ShouldBeFoundIn, results)
+				So("AnotherNumber", ShouldBeFoundIn, results)
+				So("GenUInt", ShouldBeFoundIn, results)
+				So("(unusedType).Val", ShouldBeFoundIn, results)
+				So("field [struct field]", ShouldBeFoundIn, results)
+				So("GrayKittenLink", ShouldBeFoundIn, results)
 				So("oldHelper", ShouldBeFoundIn, results)
 				So("unusedParam", ShouldBeFoundIn, results)
 
@@ -67,8 +67,8 @@ func TestUnusedIdentsWithTests(t *testing.T) {
 				So("toUint", ShouldNotBeFoundIn, results)
 
 				Convey("plus idents only found in tests", func() {
-					So("pkg1.testhelper", ShouldBeFoundIn, results)
-					So("pkg1.GenSix", ShouldNotBeFoundIn, results)
+					So("testhelper", ShouldBeFoundIn, results)
+					So("GenSix", ShouldNotBeFoundIn, results)
 				})
 			})
 		})
@@ -87,14 +87,14 @@ func TestUnusedIdentsWithSkipMembers(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			Convey("no methods or fields should be found", func() {
-				So("pkg2.(unusedType).Val", ShouldNotBeFoundIn, results)
-				So("pkg2.field [struct field]", ShouldNotBeFoundIn, results)
+				So("(unusedType).Val", ShouldNotBeFoundIn, results)
+				So("field [struct field]", ShouldNotBeFoundIn, results)
 
 				Convey("but other idents should be found", func() {
-					So("pkg1.Number", ShouldBeFoundIn, results)
-					So("pkg1.AnotherNumber", ShouldBeFoundIn, results)
-					So("pkg1.GenUInt", ShouldBeFoundIn, results)
-					So("pkg2.GrayKittenLink", ShouldBeFoundIn, results)
+					So("Number", ShouldBeFoundIn, results)
+					So("AnotherNumber", ShouldBeFoundIn, results)
+					So("GenUInt", ShouldBeFoundIn, results)
+					So("GrayKittenLink", ShouldBeFoundIn, results)
 				})
 			})
 		})

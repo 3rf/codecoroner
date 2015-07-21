@@ -19,7 +19,7 @@ func init() {
 func ShouldBeFoundIn(actual interface{}, expected ...interface{}) string {
 	// this can panic, but I'm not adding type checking
 	target := actual.(string)
-	results := expected[0].([]UnusedThing)
+	results := expected[0].([]UnusedObject)
 	for _, thing := range results {
 		if strings.HasSuffix(thing.Name, target) {
 			return ""
@@ -31,7 +31,7 @@ func ShouldBeFoundIn(actual interface{}, expected ...interface{}) string {
 func ShouldNotBeFoundIn(actual interface{}, expected ...interface{}) string {
 	// this can panic, but I'm not adding type checking
 	target := actual.(string)
-	results := expected[0].([]UnusedThing)
+	results := expected[0].([]UnusedObject)
 	for _, thing := range results {
 		if strings.HasSuffix(thing.Name, target) {
 			return fmt.Sprintf("found '%v' in results (it shouldn't be there)", target)
