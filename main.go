@@ -49,6 +49,7 @@ func main() {
 		fmt.Println("ERROR:", err)
 		os.Exit(1)
 	}
+	ucf.Logf("") // ensure a newline before printing results if -v is on
 
 	sort.Sort(unused.ByPosition(unusedObjects))
 	for _, o := range unusedObjects {
