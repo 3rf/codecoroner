@@ -8,7 +8,7 @@ Things get moved around; functions get refactored, leaving helpers on their own;
 
 The easiest ways to detect dead code is through static analysis. 
 Unfortunately, Go's current static analysis tools (`oracle`, `callgraph`, etc) do not make aggregation of unused functions as easy as it should be.
-This tool, codecoroner, uses the output of the Go `ast, `ssa`, `callgraph/rta`, and `types` libraries to find unused functions/methods in your codebase.
+This tool, codecoroner, uses the output of the Go `ast`, `ssa`, `callgraph/rta`, and `types` libraries to find unused functions/methods in your codebase.
 
 The existing [unused code detectors](https://github.com/remyoudompheng/go-misc/tree/master/deadcode) are quite useful, but only work on a small scale.
 Codecoroner was developed with large, multi-package, multi-main projects in mind.
