@@ -10,10 +10,11 @@ The easiest ways to detect dead code is through static analysis.
 Unfortunately, Go's current static analysis tools (`oracle`, `callgraph`, etc) do not make aggregation of unused functions as easy as it should be.
 This tool, codecoroner, uses the output of the Go `ast, `ssa`, `callgraph/rta`, and `types` libraries to find unused functions/methods in your codebase.
 
-Codecoroner is more extensive than existing [unused code detectors](https://github.com/remyoudompheng/go-misc/tree/master/deadcode), and was developed with large, multi-package, multi-main projects in mind.
+The existing [unused code detectors](https://github.com/remyoudompheng/go-misc/tree/master/deadcode) are quite useful, but only work on a small scale.
+Codecoroner was developed with large, multi-package, multi-main projects in mind.
 The tool will detect unused functions and variables across packages, allowing you to see if your internal packages have exported code sitting unused.
-Codecoroner finds dead code in every large Go project I point it at.
-At MongoDB, it has helped us keep our repositories clean and even caught a couple bugs.
+At MongoDB, it helps us keep our repositories clean and even caught a couple bugs.
+So far, codecoronoer has found dead code in every large public Go project I point it at.
 
 
 ###Quick Start
@@ -83,7 +84,7 @@ One reason for this is that `idents` does not build an execution graph, and so w
 ### Full Usage
 
 In addition to a command, the `codecoroner` executable requires a set of files as an argument.
-You can pass in individual files and folders, or pass in the current directory and its contents with the `go`-style `./...`.
+You can pass in individual files and folders, or pass the current directory and its contents with `./...` in the style of the `go` program.
 Codecoroner will automatically see what packages the files you give it belong to and include them in the dead code analysis. 
 This API is designed to play nice with existing go tools and makes sense to me, but if you would prefer a different API, I'd be happy to hear you out.
 
