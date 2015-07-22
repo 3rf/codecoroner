@@ -20,7 +20,6 @@ type UnusedCodeFinder struct {
 	Verbose   bool
 	LogWriter io.Writer
 
-	SkipMethodsAndFields bool
 	IncludeTests         bool
 
 	filesByCaller map[string][]token.Position

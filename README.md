@@ -70,7 +70,7 @@ github.com/3rf/codecoroner/unused/testdata/pkg1/random_num.go:10:7: Number
 github.com/3rf/codecoroner/unused/testdata/pkg1/random_num.go:13:5: AnotherNumber
 github.com/3rf/codecoroner/unused/testdata/pkg1/random_num.go:36:6: GenUInt
 github.com/3rf/codecoroner/unused/testdata/pkg1/random_num.go:42:6: GenSix
-github.com/3rf/codecoroner/unused/testdata/pkg2/kittens.go:11:25: field [struct field]
+github.com/3rf/codecoroner/unused/testdata/pkg2/kittens.go:11:25: field
 github.com/3rf/codecoroner/unused/testdata/pkg2/kittens.go:13:7: ut
 github.com/3rf/codecoroner/unused/testdata/pkg2/kittens.go:13:22: (unusedType).Val
 github.com/3rf/codecoroner/unused/testdata/pkg2/kittens.go:25:6: GrayKittenLink
@@ -84,7 +84,7 @@ One reason for this is that `idents` does not build an execution graph, and so w
 
 In addition to a command, the `codecoroner` executable requires a set of files as an argument.
 You can pass in individual files and folders, or pass in the current directory and its contents with the `go`-style `./...`.
-Codecoroner will automatically see what packages the files you give it belongs to and include them in the dead code analysis. 
+Codecoroner will automatically see what packages the files you give it belong to and include them in the dead code analysis. 
 This API is designed to play nice with existing go tools and makes sense to me, but if you would prefer a different API, I'd be happy to hear you out.
 
 Note that both modes will only report dead code for the packages/files you've passed to the tool.
@@ -131,15 +131,32 @@ The `-tests` flag includes test files and packages in your analysis.
 Doing this allows you to test main-less libraries and detect dead test helper code.
 
 
-#####-skipmembers
+#####-ignore
 ```
-codecoroner -skipmembers idents ./...
+codecoroner -ignore vendor,testdata funcs ./...
 ```
 
-The `-skipmembers` flag tells codecoroner to ignore methods and struct fields when doing identifier analysis.
+The `-ignore` flag accepts a comma-separated list of strings.
+If any of the listed strings matches part of a filepath during scanning, that file will be ignored and excluded from the analysis.
+This flag is a simple way to ignore vendored code without complicating the codecoroner's file argument.
 
+#####-tags
+```
+codecornor -tags debug funcs ./...
+```
+
+The `-tags` flag lets you pass build tags like you would during a regular `go build`. 
+If your codebase uses flags, note that unbuilt files may show up as dead code.
 
 #### Troubleshooting
 
+Some notes that may help with troubleshooting:
+ * Make sure your code can actually compile with `go build` before running codecoroner on it.
+ * If you have a vendoring system involving multiple GOPATHs, codecoroner should still work. In general, if you can execute `go build` from your current directory, you can run `codecoroner ./...` sucessfully.
 
-### Contributing
+When in doubt, file a GitHub issue and I'll be happy to help.
+
+
+#### The Future
+It would be great to drop the `idents` command and `funcs` commands all together and do everything with SSA analysis.
+None of the callgraph packages make the usage of non-function identifiers accessible, so it'll require haking at an existing implementation or building another callgraph package from scratch.
