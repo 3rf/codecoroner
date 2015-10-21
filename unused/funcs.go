@@ -42,7 +42,7 @@ func (ucf *UnusedCodeFinder) getCallgraph() error {
 		buildMode = ssa.GlobalDebug
 	}
 	ssaP := ssautil.CreateProgram(p, buildMode)
-	ssaP.BuildAll()
+	ssaP.Build()
 	roots, err := ucf.getRoots(ssaP)
 	if err != nil {
 		return fmt.Errorf("error finding roots for callgraph analysis: %v", err)
@@ -98,7 +98,7 @@ func (ucf *UnusedCodeFinder) getRoots(prog *ssa.Program) ([]*ssa.Function, error
 
 	// then find *all* main packages
 	for _, pkg := range pkgs {
-		if pkg.Object.Name() == "main" {
+		if pkg.Pkg.Name() == "main" {
 			if pkg.Func("main") == nil {
 				return nil, fmt.Errorf("no func main() in main package")
 			}
