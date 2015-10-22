@@ -1,4 +1,4 @@
-package typeutil
+package typeutils
 
 import (
 	"golang.org/x/tools/go/types"
