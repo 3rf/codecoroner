@@ -36,6 +36,44 @@ func findObjectWithName(name string, objs map[*ast.Ident]types.Object) types.Obj
 	return nil
 }
 
+func TestLookupFuncForParameter(t *testing.T) {
+	Convey("with a test main package", t, func() {
+		info := loadMainInfo()
+
+		Convey("and the types.Object for var ignoreParam", func() {
+			ignoreParam := findObjectWithName("ignoreParam", info.Defs)
+			So(ignoreParam, ShouldNotBeNil)
+
+			Convey("running LookupFunctionForParameter should return ReturnOne", func() {
+				f := LookupFuncForParameter(ignoreParam.(*types.Var))
+				So(f, ShouldNotBeNil)
+				So(f.Name(), ShouldEqual, "ReturnOne")
+			})
+		})
+
+		Convey("and the types.Object for var innerIgnore", func() {
+			innerIgnore := findObjectWithName("innerIgnore", info.Defs)
+			So(innerIgnore, ShouldNotBeNil)
+
+			Convey("running LookupFunctionForParameter should return ReturnOne", func() {
+				f := LookupFuncForParameter(innerIgnore.(*types.Var))
+				So(f, ShouldNotBeNil)
+				So(f.Name(), ShouldEqual, "doNothing")
+			})
+		})
+
+		Convey("and the types.Object for var anonParam from an anonymous func", func() {
+			anonParam := findObjectWithName("anonParam", info.Defs)
+			So(anonParam, ShouldNotBeNil)
+
+			Convey("running LookupFunctionForParameter should return nil", func() {
+				f := LookupFuncForParameter(anonParam.(*types.Var))
+				So(f, ShouldBeNil)
+			})
+		})
+	})
+}
+
 func TestLookupStructForField(t *testing.T) {
 	Convey("with a test main package", t, func() {
 		info := loadMainInfo()

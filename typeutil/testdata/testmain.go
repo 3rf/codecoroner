@@ -32,4 +32,13 @@ func (p printer) Print(a interface{}) {
 
 func main() {
 	printer{}.Print(ReturnOne(777))
+
+	doNothing := func(innerIgnore int) {
+		return
+	}
+
+	go func(anonParam int) {
+		doNothing(4)
+	}(123)
+
 }
