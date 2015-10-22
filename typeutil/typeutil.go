@@ -31,7 +31,6 @@ func LookupStructForField(field *types.Var) types.Object {
 }
 
 func lookForStruct(field *types.Var, scope *types.Scope) types.Object {
-	//crawl scope
 	for _, name := range scope.Names() {
 		obj := scope.Lookup(name)
 		if tnObj, ok := obj.(*types.TypeName); ok {

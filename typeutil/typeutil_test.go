@@ -51,7 +51,7 @@ func TestLookupStructForField(t *testing.T) {
 			})
 		})
 
-		Convey("and the types.Object for field (PkgType1).myByte", func() {
+		Convey("and the types.Object for the nested field (PkgType1).myByte", func() {
 			myByte := findObjectWithName("myByte", info.Defs)
 			So(myByte, ShouldNotBeNil)
 
