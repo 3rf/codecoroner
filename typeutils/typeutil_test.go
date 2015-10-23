@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-const testMainPkg = "github.com/3rf/codecoroner/typeutil/testdata"
+const testMainPkg = "github.com/3rf/codecoroner/typeutils/testdata"
 
 func loadMainInfo() *loader.PackageInfo {
 	var conf loader.Config
