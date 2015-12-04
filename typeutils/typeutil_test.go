@@ -12,6 +12,11 @@ import (
 const testMainPkg = "github.com/3rf/codecoroner/typeutils/testdata"
 
 func loadMainInfo() *loader.PackageInfo {
+	p := loadProg()
+	return p.Imported[testMainPkg]
+}
+
+func loadProg() *loader.Program {
 	var conf loader.Config
 	_, err := conf.FromArgs([]string{testMainPkg}, false)
 	if err != nil {
@@ -24,7 +29,7 @@ func loadMainInfo() *loader.PackageInfo {
 	if !p.Imported[testMainPkg].TransitivelyErrorFree {
 		panic(fmt.Sprintf("error loading program"))
 	}
-	return p.Imported[testMainPkg]
+	return p
 }
 
 func findObjectWithName(name string, objs map[*ast.Ident]types.Object) types.Object {
@@ -39,6 +44,8 @@ func findObjectWithName(name string, objs map[*ast.Ident]types.Object) types.Obj
 func TestLookupFuncForParameter(t *testing.T) {
 	Convey("with a test main package", t, func() {
 		info := loadMainInfo()
+		p := loadProg()
+		prog := Program(p)
 
 		Convey("and the types.Object for var ignoreParam", func() {
 			ignoreParam := findObjectWithName("ignoreParam", info.Defs)
@@ -48,6 +55,7 @@ func TestLookupFuncForParameter(t *testing.T) {
 				f := LookupFuncForParameter(ignoreParam.(*types.Var))
 				So(f, ShouldNotBeNil)
 				So(f.Name(), ShouldEqual, "ReturnOne")
+				prog.FunctionForParameter(ignoreParam.(*types.Var))
 			})
 		})
 
@@ -55,10 +63,11 @@ func TestLookupFuncForParameter(t *testing.T) {
 			innerIgnore := findObjectWithName("innerIgnore", info.Defs)
 			So(innerIgnore, ShouldNotBeNil)
 
-			Convey("running LookupFunctionForParameter should return ReturnOne", func() {
+			Convey("running LookupFunctionForParameter should return doNothing", func() {
 				f := LookupFuncForParameter(innerIgnore.(*types.Var))
 				So(f, ShouldNotBeNil)
 				So(f.Name(), ShouldEqual, "doNothing")
+				prog.FunctionForParameter(innerIgnore.(*types.Var))
 			})
 		})
 
@@ -69,6 +78,7 @@ func TestLookupFuncForParameter(t *testing.T) {
 			Convey("running LookupFunctionForParameter should return nil", func() {
 				f := LookupFuncForParameter(anonParam.(*types.Var))
 				So(f, ShouldBeNil)
+				prog.FunctionForParameter(anonParam.(*types.Var))
 			})
 		})
 	})

@@ -5,6 +5,27 @@ import (
 	"go/token"
 )
 
+type objType int
+
+const (
+	None objType = iota
+	FuncDeclaration
+	FuncLiteral
+	FuncMethod
+	Variable
+	Parameter
+	Field
+)
+
+// Object contains all the necessary information to sort, categorize,
+// and output unused code.
+type Object interface {
+	Pos() token.Position
+	Type() objType
+	Name() string
+	Fullname() string
+}
+
 // UnusedThing represents a found unused function or identifier
 type UnusedObject struct {
 	Name     string

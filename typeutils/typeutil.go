@@ -1,8 +1,26 @@
 package typeutils
 
 import (
+	"fmt"
+	"go/ast"
+	"golang.org/x/tools/go/loader"
 	"golang.org/x/tools/go/types"
 )
+
+func Program(p *loader.Program) program {
+	return program{p}
+}
+
+type program struct {
+	*loader.Program
+}
+
+func (p program) FunctionForParameter(param *types.Var) {
+	_, path, _ := p.PathEnclosingInterval(param.Pos(), param.Pos())
+	for _, n := range path {
+		fmt.Printf("=> %#v\n\n", n)
+	}
+}
 
 // LookupFuncForParameter returns the func/var object containing
 // the given var parameter. Returns nil if the var is not a parameter,
