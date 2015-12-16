@@ -33,9 +33,9 @@ type UnusedObject struct {
 }
 
 // String prints the position and name of the unused object.
-func (ut UnusedObject) String() string {
+func (uo UnusedObject) String() string {
 	return fmt.Sprintf("%v:%v:%v: %v",
-		trimGopath(ut.Position.Filename), ut.Position.Line, ut.Position.Column, ut.Name)
+		trimGopath(uo.Position.Filename), uo.Position.Line, uo.Position.Column, uo.Name)
 }
 
 // ByPosition sorts unused objects by file/location.

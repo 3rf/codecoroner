@@ -54,6 +54,7 @@ func TestUnusedFuncsWithMain(t *testing.T) {
 				So("GenSix", ShouldBeFoundIn, results)
 				So("GenUInt", ShouldBeFoundIn, results)
 				So("toUint", ShouldBeFoundIn, results)
+				So("Val", ShouldBeFoundIn, results)
 				So("GrayKittenLink", ShouldBeFoundIn, results)
 				So("GenInt", ShouldNotBeFoundIn, results)
 				So("GenIntMod400", ShouldNotBeFoundIn, results)
@@ -75,6 +76,7 @@ func TestUnusedFuncsWithTests(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			Convey("all functions that are unused by any pkg or test are found", func() {
+				So("Val", ShouldBeFoundIn, results)
 				So("oldHelper", ShouldBeFoundIn, results)
 				So("GenUInt", ShouldBeFoundIn, results)
 				So("toUint", ShouldBeFoundIn, results)

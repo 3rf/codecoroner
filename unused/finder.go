@@ -4,9 +4,10 @@ package unused
 
 import (
 	"fmt"
-	"go/ast"
 	"go/parser"
 	"go/token"
+	"golang.org/x/tools/go/loader"
+	"golang.org/x/tools/go/types"
 	"io"
 	"os"
 	"path/filepath"
@@ -20,12 +21,15 @@ type UnusedCodeFinder struct {
 	Verbose   bool
 	LogWriter io.Writer
 
-	IncludeTests         bool
+	IncludeTests bool
 
 	filesByCaller map[string][]token.Position
 	pkgs          map[string]struct{}
+	funcDefs      map[token.Pos]types.Object
+	funcUses      map[token.Pos]bool
 	funcs         []UnusedObject
 	numFilesRead  int
+	program       *loader.Program
 }
 
 func NewUnusedCodeFinder() *UnusedCodeFinder {
@@ -70,43 +74,34 @@ func (ucf *UnusedCodeFinder) pkgsAsArray() []string {
 	return packages
 }
 
+func (ucf *UnusedCodeFinder) loadProgram() error {
+	var conf loader.Config
+	_, err := conf.FromArgs(ucf.pkgsAsArray(), ucf.IncludeTests)
+	if err != nil {
+		return err
+	}
+	conf.AllowErrors = true
+	ucf.Logf("Running loader")
+	p, err := conf.Load()
+	if err != nil {
+		return err
+	}
+	ucf.program = p
+	return nil
+}
+
 func (ucf *UnusedCodeFinder) readFuncsAndImportsFromFile(filename string) error {
 	fset := token.NewFileSet()
-	f, err := parser.ParseFile(fset, filename, nil, 0)
+	_, err := parser.ParseFile(fset, filename, nil, 0)
 	if err != nil {
 		return err
 	}
 
-	// check if this is a main packages or
-	// if we want to analyze everything
-	if f.Name.Name == "main" || ucf.Idents || ucf.IncludeTests {
-		pkgName, err := getFullPkgName(filename)
-		if err != nil {
-			return fmt.Errorf("error getting main package path: %v", err)
-		}
-		ucf.AddPkg(pkgName)
+	pkgName, err := getFullPkgName(filename)
+	if err != nil {
+		return fmt.Errorf("error getting main package path: %v", err)
 	}
-
-	// iterate over the AST, tracking found functions
-	ast.Inspect(f, func(n ast.Node) bool {
-		var s string
-		switch node := n.(type) {
-		case *ast.FuncDecl:
-			s = node.Name.String()
-		}
-		if s != "" {
-			switch {
-			//TODO make this a helper
-			case strings.Contains(s, "Test"):
-			case s == "main":
-			case s == "init":
-			case s == "test":
-			default:
-				ucf.funcs = append(ucf.funcs, UnusedObject{s, fset.Position(n.Pos())})
-			}
-		}
-		return true
-	})
+	ucf.AddPkg(pkgName)
 
 	ucf.numFilesRead++
 	return nil
@@ -195,6 +190,7 @@ func (ucf *UnusedCodeFinder) Run(fileArgs []string) ([]UnusedObject, error) {
 
 	// first, get all the file names and package imports
 	ucf.Logf("Collecting declarations from source files")
+	// TODO this can probably be replaced with a loader function
 	for _, filename := range fileArgs {
 		if strings.HasSuffix(filename, "/...") && isDir(filename[:len(filename)-4]) {
 			// go tool ./... style
@@ -218,6 +214,9 @@ func (ucf *UnusedCodeFinder) Run(fileArgs []string) ([]UnusedObject, error) {
 	}
 	ucf.Logf("Parsed %v source files", ucf.numFilesRead)
 
+	if err := ucf.loadProgram(); err != nil {
+		return nil, fmt.Errorf("error loading program data: %v", err)
+	}
 	if ucf.Idents {
 		return ucf.findUnusedIdents()
 	}

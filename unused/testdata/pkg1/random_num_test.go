@@ -4,13 +4,12 @@ import (
 	"testing"
 )
 
-// This helper should be found by [idents] and [funcs] if
-// test analysis is enabled.
+// This should never be found, regardless of tests setting
 func testhelper() int {
 	return 7
 }
 
-// This should not be found
+// This should only be found with tests disabled
 func TestTheNumberSix(t *testing.T) {
 	if GenSix() != 6 {
 		t.Fatal("THIS HAS GONE POORLY")

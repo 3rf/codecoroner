@@ -7,7 +7,7 @@ import (
 	"github.com/3rf/codecoroner/unused/testdata/pkg1"
 )
 
-// this type and its method should be found by [idents]
+// this type and its method should be found
 type unusedType struct{ field int }
 
 func (ut unusedType) Val() int {

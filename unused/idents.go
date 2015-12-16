@@ -3,7 +3,6 @@ package unused
 import (
 	"fmt"
 	"go/token"
-	"golang.org/x/tools/go/loader"
 	"golang.org/x/tools/go/types"
 	"strings"
 )
@@ -30,22 +29,11 @@ type ident struct {
 }
 
 func (ucf *UnusedCodeFinder) findUnusedIdents() ([]UnusedObject, error) {
-	var conf loader.Config
-	_, err := conf.FromArgs(ucf.pkgsAsArray(), ucf.IncludeTests)
-	if err != nil {
-		return nil, fmt.Errorf("error loading program data: %v", err)
-	}
-	conf.AllowErrors = true
-	ucf.Logf("Running loader")
-	p, err := conf.Load()
-	if err != nil {
-		return nil, fmt.Errorf("error loading program data: %v", err)
-	}
 
 	identToUsage := map[ident]int{}
 	defined := map[ident]struct{}{}
 
-	for key, info := range p.Imported {
+	for key, info := range ucf.program.Imported {
 		if strings.Contains(key, ".") { //TODO do we need this if?
 
 			// find all *used* idents
@@ -94,7 +82,7 @@ func (ucf *UnusedCodeFinder) findUnusedIdents() ([]UnusedObject, error) {
 		if _, exists := identToUsage[key]; !exists {
 			unused = append(unused, UnusedObject{
 				Name:     key.Name,
-				Position: p.Fset.Position(key.Pos),
+				Position: ucf.program.Fset.Position(key.Pos),
 			})
 		}
 	}
