@@ -9,7 +9,6 @@ func TestUnusedIdentsWithMain(t *testing.T) {
 	Convey("with a test main package and a default UnusedCodeFinder", t, func() {
 		ucf := NewUnusedCodeFinder()
 		So(ucf, ShouldNotBeNil)
-		ucf.Idents = true
 
 		Convey("running 'idents'", func() {
 			results, err := ucf.Run([]string{"testdata"})
@@ -20,7 +19,6 @@ func TestUnusedIdentsWithMain(t *testing.T) {
 				So("AnotherNumber", ShouldBeFoundIn, results)
 				So("GenSix", ShouldBeFoundIn, results)
 				So("GenUInt", ShouldBeFoundIn, results)
-				So("(unusedType).Val", ShouldBeFoundIn, results)
 				So("field", ShouldBeFoundIn, results)
 				So("GrayKittenLink", ShouldBeFoundIn, results)
 				So("oldHelper", ShouldBeFoundIn, results)
@@ -31,10 +29,6 @@ func TestUnusedIdentsWithMain(t *testing.T) {
 				So("ColorKittenLink", ShouldNotBeFoundIn, results)
 				So("init", ShouldNotBeFoundIn, results)
 			})
-
-			Convey("but funcs that are called in other unused funcs will not be found", func() {
-				So("toUint", ShouldNotBeFoundIn, results)
-			})
 		})
 	})
 }
@@ -43,7 +37,6 @@ func TestUnusedIdentsWithTests(t *testing.T) {
 	Convey("with a test main package and a default UnusedCodeFinder", t, func() {
 		ucf := NewUnusedCodeFinder()
 		So(ucf, ShouldNotBeNil)
-		ucf.Idents = true
 		ucf.IncludeTests = true
 
 		Convey("running 'idents' with -tests", func() {
@@ -54,7 +47,7 @@ func TestUnusedIdentsWithTests(t *testing.T) {
 				So("Number", ShouldBeFoundIn, results)
 				So("AnotherNumber", ShouldBeFoundIn, results)
 				So("GenUInt", ShouldBeFoundIn, results)
-				So("(unusedType).Val", ShouldBeFoundIn, results)
+				So("toUint", ShouldBeFoundIn, results)
 				So("field", ShouldBeFoundIn, results)
 				So("GrayKittenLink", ShouldBeFoundIn, results)
 				So("oldHelper", ShouldBeFoundIn, results)
@@ -64,7 +57,6 @@ func TestUnusedIdentsWithTests(t *testing.T) {
 				So("GenIntMod400", ShouldNotBeFoundIn, results)
 				So("ColorKittenLink", ShouldNotBeFoundIn, results)
 				So("init", ShouldNotBeFoundIn, results)
-				So("toUint", ShouldNotBeFoundIn, results)
 
 				Convey("plus idents only found in tests", func() {
 					So("testhelper", ShouldBeFoundIn, results)
@@ -79,7 +71,6 @@ func TestUnusedIdentsWithIgnore(t *testing.T) {
 	Convey("with a test main package and a default UnusedCodeFinder", t, func() {
 		ucf := NewUnusedCodeFinder()
 		So(ucf, ShouldNotBeNil)
-		ucf.Idents = true
 		ucf.Ignore = []string{"pkg1", "pkg2"}
 
 		Convey("running 'idents' with -ignore to skip pkg1 and pk2", func() {

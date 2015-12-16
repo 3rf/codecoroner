@@ -28,24 +28,14 @@ func main() {
 		ucf.Ignore = nil
 	}
 
-	if len(flag.Args()) == 0 {
-		fmt.Println("Must specify either 'funcs' or 'idents' command. Run with -help for more info.")
-		os.Exit(2)
-	}
-	command := flag.Arg(0)
-	switch command {
-	case "funcs", "functions":
-		ucf.Idents = false
-	case "idents", "identifiers":
-		ucf.Idents = true
-	default:
-		fmt.Println("Must specify either 'funcs' or 'idents' command. Run with -help for more info.")
-		os.Exit(2)
+	args := flag.Args()
+	if len(args) == 0 {
+		args = []string{"./..."} //TODO warn? Let's copy go vet...
 	}
 
-	unusedObjects, err := ucf.Run(flag.Args()[1:])
+	unusedObjects, err := ucf.Run(args)
 	if err != nil {
-		fmt.Println("ERROR:", err)
+		fmt.Println("ERROR: ", err)
 		os.Exit(1)
 	}
 	ucf.Logf("") // ensure a newline before printing results if -v is on

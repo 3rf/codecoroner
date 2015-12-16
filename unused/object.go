@@ -3,6 +3,8 @@ package unused
 import (
 	"fmt"
 	"go/token"
+	"golang.org/x/tools/go/types"
+	"strings"
 )
 
 type objType int
@@ -64,4 +66,20 @@ func (p ByPosition) Less(i, j int) bool {
 
 	// it's a bug if this even needs to be used
 	return p[i].Name < p[j].Name
+}
+
+// shorten the method name for nicer printing and say if its a method
+func handleMethodName(f *types.Func) string {
+	name := f.Name()
+	if strings.HasPrefix(f.FullName(), "(") {
+		// it's a method! let's shorten the receiver!
+		fullName := f.FullName()
+		// second to last "."
+		sepIdx := strings.LastIndex(fullName[:strings.LastIndex(fullName, ".")], ".")
+		if sepIdx <= 0 { // rare special case
+			return fullName
+		}
+		return fmt.Sprintf("(%s", fullName[sepIdx+1:])
+	}
+	return name
 }

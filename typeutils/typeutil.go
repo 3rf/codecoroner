@@ -2,7 +2,6 @@ package typeutils
 
 import (
 	"fmt"
-	"go/ast"
 	"golang.org/x/tools/go/loader"
 	"golang.org/x/tools/go/types"
 )
