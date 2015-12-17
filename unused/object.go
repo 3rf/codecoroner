@@ -25,7 +25,7 @@ type Object interface {
 	Pos() token.Position
 	Type() objType
 	Name() string
-	Fullname() string
+	FullName() string
 }
 
 // UnusedThing represents a found unused function or identifier

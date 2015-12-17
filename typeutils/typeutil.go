@@ -1,7 +1,8 @@
 package typeutils
 
 import (
-	"fmt"
+	"go/ast"
+	"go/token"
 	"golang.org/x/tools/go/loader"
 	"golang.org/x/tools/go/types"
 )
@@ -14,11 +15,44 @@ type program struct {
 	*loader.Program
 }
 
+// helper for generating an ast path for a single object
+func (p program) astPath(pos token.Pos) []ast.Node {
+	_, path, _ := p.PathEnclosingInterval(pos, pos)
+	return path
+}
+
 func (p program) FunctionForParameter(param *types.Var) {
-	_, path, _ := p.PathEnclosingInterval(param.Pos(), param.Pos())
-	for _, n := range path {
-		fmt.Printf("=> %#v\n\n", n)
+	/*	_, path, _ := p.PathEnclosingInterval(param.Pos(), param.Pos())
+		for _, n := range path {
+			fmt.Printf("=> %#v\n\n", n)
+		}*/
+}
+
+func (p program) IsParameter(v *types.Var) bool {
+	// parameters are always [Ident] in [Fields] in [FieldLists] in [FuncTypes or FuncDecl]
+	path := p.astPath(v.Pos())
+	if len(path) < 4 {
+		return false
 	}
+	_, ok0 := path[0].(*ast.Ident)
+	_, ok1 := path[1].(*ast.Field)
+	_, ok2 := path[2].(*ast.FieldList)
+	_, ok3FT := path[3].(*ast.FuncType)
+	_, ok3FD := path[3].(*ast.FuncDecl)
+	return ok0 && ok1 && ok2 && (ok3FT || ok3FD)
+}
+
+func (p program) IsStructField(v *types.Var) bool {
+	// parameters are always [Ident] in [Fields] in [FieldLists] in [FuncTypes or FuncDecl]
+	path := p.astPath(v.Pos())
+	if len(path) < 4 {
+		return false
+	}
+	_, ok0 := path[0].(*ast.Ident)
+	_, ok1 := path[1].(*ast.Field)
+	_, ok2 := path[2].(*ast.FieldList)
+	_, ok3 := path[3].(*ast.StructType)
+	return ok0 && ok1 && ok2 && ok3
 }
 
 // LookupFuncForParameter returns the func/var object containing
