@@ -8,8 +8,8 @@ import (
 	"golang.org/x/tools/go/types"
 )
 
-func (ucf *UnusedCodeFinder) findUnusedObjects() []UnusedObject {
-	unused := []UnusedObject{}
+func (ucf *UnusedCodeFinder) findUnusedObjects() []Object {
+	unused := []Object{}
 	ucf.Logf("Checking against a list of defined functions and variables")
 	for _, info := range ucf.program.Imported {
 		// find all declared funcs
@@ -23,7 +23,7 @@ func (ucf *UnusedCodeFinder) findUnusedObjects() []UnusedObject {
 				// checked using callgraph analysis and variables use a simple lookup.
 				// See package notes for an explanation.
 				if !ucf.funcUses[obj.Pos()] && !ucf.varUses[obj.Pos()] {
-					unused = append(unused, UnusedObject{obj.Name(), ucf.program.Fset.Position(obj.Pos())})
+					unused = append(unused, ToObject(ucf.program, obj))
 				}
 			}
 		}

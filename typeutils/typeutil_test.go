@@ -93,7 +93,7 @@ func TestParameterMethods(t *testing.T) {
 			})
 		})
 
-		Convey("and the types.Object for var doNothing, which is not a param", func() {
+		Convey("and the types.Object for var doNothing, which ISN'T a param", func() {
 			doNothing := findObjectWithName("doNothing", info.Defs)
 			So(doNothing, ShouldNotBeNil)
 
@@ -101,6 +101,35 @@ func TestParameterMethods(t *testing.T) {
 				So(prog.IsParameter(doNothing.(*types.Var)), ShouldBeFalse)
 			})
 		})
+	})
+}
+
+func TestMethodMethods(t *testing.T) {
+	Convey("with a test main package", t, func() {
+		info := loadMainInfo()
+		prog := Program(loadProg())
+
+		printer := findObjectWithName("printer", info.Defs)
+		Printf("\n\n%#v\n\n", printer)
+
+		Convey("and the types.Object for method printer.Print", func() {
+			fPrint := findObjectWithName("Print", info.Defs)
+			So(fPrint, ShouldNotBeNil)
+
+			Convey("running IsMethod should return true", func() {
+				So(prog.IsMethod(fPrint.(*types.Func)), ShouldBeTrue)
+			})
+		})
+
+		Convey("and the types.Object for func ReturnOne, which ISN'T a method", func() {
+			ReturnOne := findObjectWithName("ReturnOne", info.Defs)
+			So(ReturnOne, ShouldNotBeNil)
+
+			Convey("running IsMethod should return false", func() {
+				So(prog.IsMethod(ReturnOne.(*types.Func)), ShouldBeFalse)
+			})
+		})
+
 	})
 }
 

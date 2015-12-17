@@ -42,6 +42,6 @@ func main() {
 
 	sort.Sort(unused.ByPosition(unusedObjects))
 	for _, o := range unusedObjects {
-		fmt.Printf("%s\n", o)
+		fmt.Println(unused.ObjectString(o))
 	}
 }

@@ -58,7 +58,7 @@ func (ucf *UnusedCodeFinder) Errorf(format string, v ...interface{}) {
 	fmt.Fprintf(ucf.LogWriter, format+"\n", v...)
 }
 
-func (ucf *UnusedCodeFinder) Run(fileArgs []string) ([]UnusedObject, error) {
+func (ucf *UnusedCodeFinder) Run(fileArgs []string) ([]Object, error) {
 	// do some basic sanity checks on system configuration
 	if len(fileArgs) == 0 {
 		return nil, fmt.Errorf(

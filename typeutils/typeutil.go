@@ -1,11 +1,14 @@
 package typeutils
 
 import (
+	"fmt"
 	"go/ast"
 	"go/token"
 	"golang.org/x/tools/go/loader"
 	"golang.org/x/tools/go/types"
 )
+
+var _ fmt.Stringer //TODO
 
 func Program(p *loader.Program) program {
 	return program{p}
@@ -28,6 +31,13 @@ func (p program) FunctionForParameter(param *types.Var) {
 		}*/
 }
 
+func (p program) IsMethod(v *types.Func) bool {
+	if sig, ok := v.Type().(*types.Signature); ok {
+		return sig.Recv() != nil
+	}
+	return false
+}
+
 func (p program) IsParameter(v *types.Var) bool {
 	// parameters are always [Ident] in [Fields] in [FieldLists] in [FuncTypes or FuncDecl]
 	path := p.astPath(v.Pos())
@@ -43,7 +53,7 @@ func (p program) IsParameter(v *types.Var) bool {
 }
 
 func (p program) IsStructField(v *types.Var) bool {
-	// parameters are always [Ident] in [Fields] in [FieldLists] in [FuncTypes or FuncDecl]
+	// struct fields are always [Ident] in [Fields] in [FieldLists] in [StructType]
 	path := p.astPath(v.Pos())
 	if len(path) < 4 {
 		return false
