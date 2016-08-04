@@ -3,13 +3,13 @@ package unused
 import (
 	"fmt"
 	"go/token"
-	"golang.org/x/tools/go/loader"
-	"golang.org/x/tools/go/types"
 	"strings"
+
+	"golang.org/x/tools/go/loader"
 )
 
 // shorten the method name for nicer printing and say if its a method
-func handleMethodName(f *types.Func) string {
+func handleMethodName(f typeFunc) string {
 	name := f.Name()
 	if strings.HasPrefix(f.FullName(), "(") {
 		// it's a method! let's shorten the receiver!
@@ -52,10 +52,9 @@ func (ucf *UnusedCodeFinder) findUnusedIdents() ([]UnusedObject, error) {
 			for _, kind := range info.Info.Uses {
 				if kind.Pkg() != nil {
 					name := kind.Name()
-					switch asType := kind.(type) {
-					case *types.Func:
+					if f, ok := objToFunc(kind); ok {
 						//special case for methods
-						name = handleMethodName(asType)
+						name = handleMethodName(f)
 					}
 					id := ident{Name: name, Pos: kind.Pos()}
 					identToUsage[id] = identToUsage[id] + 1
@@ -75,9 +74,8 @@ func (ucf *UnusedCodeFinder) findUnusedIdents() ([]UnusedObject, error) {
 						strings.HasPrefix(name, "Test") {
 						continue
 					}
-					switch asType := kind.(type) {
-					case *types.Func:
-						name = handleMethodName(asType)
+					if f, ok := objToFunc(kind); ok {
+						name = handleMethodName(f)
 					}
 					if name == "." {
 						continue
