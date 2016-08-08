@@ -55,11 +55,9 @@ func TestParameterMethods(t *testing.T) {
 				So(prog.IsParameter(ignoreParam.(*types.Var)), ShouldBeTrue)
 			})
 
-			Convey("running LookupFunctionForParameter should return ReturnOne", func() {
-				f := LookupFuncForParameter(ignoreParam.(*types.Var))
-				So(f, ShouldNotBeNil)
-				So(f.Name(), ShouldEqual, "ReturnOne")
-				prog.FunctionForParameter(ignoreParam.(*types.Var))
+			Convey("running FuncForParameter should return ReturnOne", func() {
+				f := prog.FuncForParameter(ignoreParam.(*types.Var))
+				So(f, ShouldEqual, "ReturnOne")
 			})
 		})
 
@@ -71,11 +69,9 @@ func TestParameterMethods(t *testing.T) {
 				So(prog.IsParameter(innerIgnore.(*types.Var)), ShouldBeTrue)
 			})
 
-			Convey("running LookupFunctionForParameter should return doNothing", func() {
-				f := LookupFuncForParameter(innerIgnore.(*types.Var))
-				So(f, ShouldNotBeNil)
-				So(f.Name(), ShouldEqual, "doNothing")
-				prog.FunctionForParameter(innerIgnore.(*types.Var))
+			Convey("running FuncForParameter should return doNothing", func() {
+				f := prog.FuncForParameter(innerIgnore.(*types.Var))
+				So(f, ShouldEqual, "doNothing")
 			})
 		})
 
@@ -87,10 +83,8 @@ func TestParameterMethods(t *testing.T) {
 				So(prog.IsParameter(anonParam.(*types.Var)), ShouldBeTrue)
 			})
 
-			Convey("running LookupFunctionForParameter should return nil", func() {
-				f := LookupFuncForParameter(anonParam.(*types.Var))
-				So(f, ShouldBeNil)
-				prog.FunctionForParameter(anonParam.(*types.Var))
+			Convey("running FuncForParameter should return nil", func() {
+				So(prog.FuncForParameter(anonParam.(*types.Var)), ShouldEqual, Anonymous)
 			})
 		})
 

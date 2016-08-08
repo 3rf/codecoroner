@@ -27,14 +27,30 @@ func (p program) astPath(pos token.Pos) []ast.Node {
 	return path
 }
 
-func (p program) FunctionForParameter(param *types.Var) {
-	/*	_, path, _ := p.PathEnclosingInterval(param.Pos(), param.Pos())
-		for _, n := range path {
-			fmt.Printf("=> %#v\n\n", n)
-		}*/
+func (p program) FuncForParameter(v *types.Var) string {
+	path := p.astPath(v.Pos())
+	if len(path) < 4 {
+		return ""
+	}
+	switch f := path[3].(type) {
+	case *ast.FuncDecl:
+		return f.Name.Name
+	case *ast.FuncType:
+		fmt.Printf(":::: %#v\n", path) //FIXME
+		if len(path) >= 5 {
+			if assign, ok := path[5].(*ast.AssignStmt); ok && len(assign.Lhs) > 0 {
+				if lhs, ok := assign.Lhs[0].(*ast.Ident); ok {
+					return lhs.Name
+				}
+			}
+		}
+		return Anonymous
+	default:
+		return ""
+	}
 }
 
-func (p program) IsMethod(v *types.Func) bool {
+func (program) IsMethod(v *types.Func) bool {
 	if sig, ok := v.Type().(*types.Signature); ok {
 		return sig.Recv() != nil
 	}
@@ -106,53 +122,5 @@ func (p program) structForField(pos token.Pos) string {
 		//fmt.Printf(">>> %#v\n", path[4]) //FIXME
 		return ""
 	}
-
-}
-
-// LookupFuncForParameter returns the func/var object containing
-// the given var parameter. Returns nil if the var is not a parameter,
-// or if the var is a parameter to an unaddressable func.
-func LookupFuncForParameter(param *types.Var) types.Object {
-	// parameters will always have a parent scope
-	if param.Parent() == nil {
-		return nil
-	}
-
-	// first check the pkg universe for the func
-	scope := param.Pkg().Scope()
-	f := lookForFunc(param, scope)
-	if f != nil {
-		return f
-	}
-
-	// now search the local scope
-	scope = param.Parent().Parent()
-	f = lookForFunc(param, scope)
-	if f != nil {
-		return f
-	}
-
-	return nil
-}
-
-// lookForFunc iterates through a scope and checks every func
-// for a matching parameter. Returns nil if there is no matching func.
-func lookForFunc(param *types.Var, scope *types.Scope) types.Object {
-	for _, name := range scope.Names() {
-		obj := scope.Lookup(name)
-		// grab the underlying signature from both vars and func declarations
-		switch o := obj.(type) {
-		case *types.Var, *types.Func:
-			if sigObj, ok := o.Type().Underlying().(*types.Signature); ok {
-				// iterate through the signature's parameters for a match
-				for i := 0; i < sigObj.Params().Len(); i++ {
-					if sigObj.Params().At(i).Pos() == param.Pos() {
-						return obj
-					}
-				}
-			}
-		}
-	}
-	return nil
 
 }
