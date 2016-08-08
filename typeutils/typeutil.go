@@ -9,6 +9,8 @@ import (
 	"golang.org/x/tools/go/loader"
 )
 
+const Anonymous = "<anonymous>"
+
 var _ fmt.Stringer //TODO
 
 func Program(p *loader.Program) program {
@@ -64,6 +66,47 @@ func (p program) IsStructField(v *types.Var) bool {
 	_, ok2 := path[2].(*ast.FieldList)
 	_, ok3 := path[3].(*ast.StructType)
 	return ok0 && ok1 && ok2 && ok3
+}
+
+func (p program) StructForField(v *types.Var) string {
+	return p.structForField(v.Pos())
+}
+
+// recursive helper for grabbing a struct field's struct
+func (p program) structForField(pos token.Pos) string {
+	path := p.astPath(pos)
+	if len(path) < 5 {
+		return ""
+	}
+	switch s := path[4].(type) {
+	case *ast.TypeSpec: // struct type declarations
+		return s.Name.Name
+	case *ast.ValueSpec: // anonymous structs using "var" syntax
+		if len(s.Names) > 0 {
+			return s.Names[0].Name
+		}
+		return ""
+	case *ast.Field: // struct is a field of another struct
+		if len(s.Names) > 0 {
+			//fmt.Printf(":::: %#v\n", path) //FIXME
+			return p.structForField(path[4].Pos()) + "." + s.Names[0].Name
+		}
+		return ""
+	case *ast.CompositeLit: // local anonymous struct
+		if len(path) >= 6 {
+			// grab the left-hand side of the assign statment (i.e. "X := ...")
+			if assign, ok := path[5].(*ast.AssignStmt); ok && len(assign.Lhs) > 0 {
+				if lhs, ok := assign.Lhs[0].(*ast.Ident); ok {
+					return lhs.Name
+				}
+			}
+		}
+		return Anonymous
+	default:
+		//fmt.Printf(">>> %#v\n", path[4]) //FIXME
+		return ""
+	}
+
 }
 
 // LookupFuncForParameter returns the func/var object containing

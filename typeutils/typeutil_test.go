@@ -110,9 +110,6 @@ func TestMethodMethods(t *testing.T) {
 		info := loadMainInfo()
 		prog := Program(loadProg())
 
-		printer := findObjectWithName("printer", info.Defs)
-		Printf("\n\n%#v\n\n", printer)
-
 		Convey("and the types.Object for method printer.Print", func() {
 			fPrint := findObjectWithName("Print", info.Defs)
 			So(fPrint, ShouldNotBeNil)
@@ -147,10 +144,9 @@ func TestLookupStructForField(t *testing.T) {
 				So(prog.IsStructField(myStr.(*types.Var)), ShouldBeTrue)
 			})
 
-			Convey("running LookupStructForField should return PkgType1", func() {
-				s := LookupStructForField(myStr.(*types.Var))
-				So(s, ShouldNotBeNil)
-				So(s.Name(), ShouldEqual, "PkgType1")
+			Convey("running StructForField should return PkgType1", func() {
+				s := prog.StructForField(myStr.(*types.Var))
+				So(s, ShouldEqual, "PkgType1")
 			})
 		})
 
@@ -163,9 +159,8 @@ func TestLookupStructForField(t *testing.T) {
 			})
 
 			Convey("running LookupStructForField should return PkgType1", func() {
-				s := LookupStructForField(myByte.(*types.Var))
-				So(s, ShouldNotBeNil)
-				So(s.Name(), ShouldEqual, "PkgType1")
+				s := prog.StructForField(myByte.(*types.Var))
+				So(s, ShouldEqual, "PkgType1.internal")
 			})
 		})
 
@@ -188,10 +183,9 @@ func TestLookupStructForField(t *testing.T) {
 			myInt := findObjectWithName("myInt", info.Uses)
 			So(myInt, ShouldNotBeNil)
 
-			Convey("running LookupStructForField should return the correct struct", func() {
-				s := LookupStructForField(myInt.(*types.Var))
-				So(s, ShouldNotBeNil)
-				So(s.Name(), ShouldEqual, "internalType")
+			Convey("running LookupStructForField should return internalType", func() {
+				s := prog.StructForField(myInt.(*types.Var))
+				So(s, ShouldEqual, "internalType")
 			})
 		})
 
@@ -203,9 +197,35 @@ func TestLookupStructForField(t *testing.T) {
 				So(prog.IsStructField(pkgVar.(*types.Var)), ShouldBeFalse)
 			})
 
-			Convey("running LookupStructForField should return nil", func() {
-				s := LookupStructForField(pkgVar.(*types.Var))
-				So(s, ShouldBeNil)
+			Convey("running LookupStructForField should return nothing", func() {
+				s := prog.StructForField(pkgVar.(*types.Var))
+				So(s, ShouldEqual, "")
+			})
+		})
+
+		Convey("with a types.Object for an anonymous package struct field", func() {
+			anon := findObjectWithName("field1", info.Defs)
+			So(anon, ShouldNotBeNil)
+
+			Convey("running IsStructField should return true", func() {
+				So(prog.IsStructField(anon.(*types.Var)), ShouldBeTrue)
+			})
+
+			Convey("StructForField should be the name of the variable", func() {
+				So(prog.StructForField(anon.(*types.Var)), ShouldEqual, "PkgAnonStruct")
+			})
+		})
+
+		Convey("with a types.Object for an anonymous local struct field", func() {
+			anon := findObjectWithName("field2", info.Defs)
+			So(anon, ShouldNotBeNil)
+
+			Convey("running IsStructField should return true", func() {
+				So(prog.IsStructField(anon.(*types.Var)), ShouldBeTrue)
+			})
+
+			Convey("StructForField should be the name of the variable", func() {
+				So(prog.StructForField(anon.(*types.Var)), ShouldEqual, "localAnonStruct")
 			})
 		})
 	})

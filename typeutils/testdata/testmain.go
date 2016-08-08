@@ -14,6 +14,10 @@ type PkgType1 struct {
 	}
 }
 
+var PkgAnonStruct struct {
+	field1 int
+}
+
 func ReturnOne(ignoreParam int) int {
 	type internalType struct {
 		myInt     int64
@@ -36,6 +40,11 @@ func main() {
 	doNothing := func(innerIgnore int) {
 		return
 	}
+
+	localAnonStruct := struct {
+		field2 int
+	}{}
+	_ = localAnonStruct
 
 	go func(anonParam int) {
 		doNothing(4)
