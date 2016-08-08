@@ -5,6 +5,7 @@ import (
 	"go/ast"
 	"go/token"
 	"go/types"
+	"strings"
 
 	"golang.org/x/tools/go/loader"
 )
@@ -50,13 +51,6 @@ func (p program) FuncForParameter(v *types.Var) string {
 	}
 }
 
-func (program) IsMethod(v *types.Func) bool {
-	if sig, ok := v.Type().(*types.Signature); ok {
-		return sig.Recv() != nil
-	}
-	return false
-}
-
 func (p program) IsParameter(v *types.Var) bool {
 	// parameters are always [Ident] in [Fields] in [FieldLists] in [FuncTypes or FuncDecl]
 	path := p.astPath(v.Pos())
@@ -69,6 +63,32 @@ func (p program) IsParameter(v *types.Var) bool {
 	_, ok3FT := path[3].(*ast.FuncType)
 	_, ok3FD := path[3].(*ast.FuncDecl)
 	return ok0 && ok1 && ok2 && (ok3FT || ok3FD)
+}
+
+func (program) IsMethod(v *types.Func) bool {
+	if sig, ok := v.Type().(*types.Signature); ok {
+		return sig.Recv() != nil
+	}
+	return false
+}
+
+func (program) RecieverForMethod(v *types.Func) string { //TESTME
+	if sig, ok := v.Type().(*types.Signature); ok && sig != nil {
+		typeStr := sig.Recv().Type().String()
+		if i := strings.LastIndex(typeStr, "."); i-2 > 0 {
+			return typeStr[i+1:]
+		}
+	}
+	return ""
+}
+
+func (program) IsInterfaceMethod(v *types.Func) bool { //TESTME
+	if sig, ok := v.Type().(*types.Signature); ok && sig != nil {
+		u := sig.Recv().Type().Underlying()
+		_, ok := u.(*types.Interface)
+		return ok
+	}
+	return false
 }
 
 func (p program) IsStructField(v *types.Var) bool {

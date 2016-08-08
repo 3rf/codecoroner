@@ -35,7 +35,12 @@ func ToObject(prog *loader.Program, o types.Object) Object {
 	switch ot := o.(type) {
 	case *types.Func:
 		if p.IsMethod(ot) {
-			return &Func{fn: ot, position: p.Fset.Position(o.Pos())}
+			return &Func{
+				iface:    p.IsInterfaceMethod(ot), //TODO make these their own thing
+				fn:       ot,
+				position: p.Fset.Position(o.Pos()),
+				recv:     p.RecieverForMethod(ot),
+			}
 		}
 		return &Func{fn: ot, position: p.Fset.Position(o.Pos())}
 	default:
@@ -45,13 +50,20 @@ func ToObject(prog *loader.Program, o types.Object) Object {
 
 // Func represents an unused function
 type Func struct {
+	iface    bool
 	fn       *types.Func
 	position token.Position
+	recv     string
 }
 
 func (f *Func) Position() token.Position { return f.position }
 func (f *Func) Name() string             { return f.fn.Name() }
-func (f *Func) FullName() string         { return f.Name() }
+func (f *Func) FullName() string {
+	if f.recv != "" {
+		return fmt.Sprintf("(%v).%v", f.recv, f.Name())
+	}
+	return f.Name()
+}
 
 // Misc represents and un-handled unused identifier
 type Misc struct {
