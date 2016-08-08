@@ -131,7 +131,7 @@ func TestMethodMethods(t *testing.T) {
 	})
 }
 
-func TestLookupStructForField(t *testing.T) {
+func TestStructForField(t *testing.T) {
 	Convey("with a test main package", t, func() {
 		info := loadMainInfo()
 		prog := Program(loadProg())
@@ -158,7 +158,7 @@ func TestLookupStructForField(t *testing.T) {
 				So(prog.IsStructField(myByte.(*types.Var)), ShouldBeTrue)
 			})
 
-			Convey("running LookupStructForField should return PkgType1", func() {
+			Convey("running StructForField should return PkgType1", func() {
 				s := prog.StructForField(myByte.(*types.Var))
 				So(s, ShouldEqual, "PkgType1.internal")
 			})
@@ -172,10 +172,9 @@ func TestLookupStructForField(t *testing.T) {
 				So(prog.IsStructField(myFloat64.(*types.Var)), ShouldBeTrue)
 			})
 
-			Convey("running LookupStructForField should return internalType", func() {
-				s := LookupStructForField(myFloat64.(*types.Var))
-				So(s, ShouldNotBeNil)
-				So(s.Name(), ShouldEqual, "internalType")
+			Convey("running StructForField should return internalType", func() {
+				s := prog.StructForField(myFloat64.(*types.Var))
+				So(s, ShouldEqual, "internalType")
 			})
 		})
 
@@ -183,7 +182,7 @@ func TestLookupStructForField(t *testing.T) {
 			myInt := findObjectWithName("myInt", info.Uses)
 			So(myInt, ShouldNotBeNil)
 
-			Convey("running LookupStructForField should return internalType", func() {
+			Convey("running StructForField should return internalType", func() {
 				s := prog.StructForField(myInt.(*types.Var))
 				So(s, ShouldEqual, "internalType")
 			})
@@ -197,7 +196,7 @@ func TestLookupStructForField(t *testing.T) {
 				So(prog.IsStructField(pkgVar.(*types.Var)), ShouldBeFalse)
 			})
 
-			Convey("running LookupStructForField should return nothing", func() {
+			Convey("running StructForField should return nothing", func() {
 				s := prog.StructForField(pkgVar.(*types.Var))
 				So(s, ShouldEqual, "")
 			})
