@@ -5,11 +5,12 @@ package unused
 import (
 	"fmt"
 	"go/token"
-	"golang.org/x/tools/go/loader"
-	"golang.org/x/tools/go/types"
+	"go/types"
 	"io"
 	"os"
 	"strings"
+
+	"golang.org/x/tools/go/loader"
 )
 
 type UnusedCodeFinder struct {

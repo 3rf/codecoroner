@@ -2,11 +2,12 @@ package typeutils
 
 import (
 	"fmt"
-	. "github.com/smartystreets/goconvey/convey"
 	"go/ast"
-	"golang.org/x/tools/go/loader"
-	"golang.org/x/tools/go/types"
+	"go/types"
 	"testing"
+
+	. "github.com/smartystreets/goconvey/convey"
+	"golang.org/x/tools/go/loader"
 )
 
 const testMainPkg = "github.com/3rf/codecoroner/typeutils/testdata"

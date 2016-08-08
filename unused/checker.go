@@ -2,10 +2,11 @@ package unused
 
 import (
 	"fmt"
+	"go/types"
+
 	"golang.org/x/tools/go/callgraph/rta"
 	"golang.org/x/tools/go/ssa"
 	"golang.org/x/tools/go/ssa/ssautil"
-	"golang.org/x/tools/go/types"
 )
 
 func (ucf *UnusedCodeFinder) findUnusedObjects() []Object {

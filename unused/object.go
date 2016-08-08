@@ -2,11 +2,12 @@ package unused
 
 import (
 	"fmt"
-	"github.com/3rf/codecoroner/typeutils"
 	"go/token"
-	"golang.org/x/tools/go/loader"
-	"golang.org/x/tools/go/types"
+	"go/types"
 	"strings"
+
+	"github.com/3rf/codecoroner/typeutils"
+	"golang.org/x/tools/go/loader"
 )
 
 type objType int
