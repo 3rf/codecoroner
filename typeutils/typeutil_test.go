@@ -142,6 +142,10 @@ func TestStructMethods(t *testing.T) {
 				s := prog.StructForField(myStr.(*types.Var))
 				So(s, ShouldEqual, "PkgType1")
 			})
+
+			Convey("running IsEmbeddedField should return false", func() {
+				So(prog.IsEmbeddedField(myStr.(*types.Var)), ShouldBeFalse)
+			})
 		})
 
 		Convey("and the types.Object for the nested field (PkgType1).myByte", func() {
@@ -223,7 +227,20 @@ func TestStructMethods(t *testing.T) {
 		})
 
 		Convey("with a types.Object for a struct with an embedded time.Time", func() {
-			emb := findObjectWithName("embedded", info.Defs)
+			emb := findObjectWithName("Time", info.Defs)
+			So(emb, ShouldNotBeNil)
+
+			Convey("running IsStructField should return true", func() {
+				So(prog.IsStructField(emb.(*types.Var)), ShouldBeTrue)
+			})
+
+			Convey("running IsEmbeddedField should return true", func() {
+				So(prog.IsEmbeddedField(emb.(*types.Var)), ShouldBeTrue)
+			})
+		})
+
+		Convey("with a types.Object for a struct with an embedded sync.Mutex POINTER", func() {
+			emb := findObjectWithName("Mutex", info.Defs)
 			So(emb, ShouldNotBeNil)
 
 			Convey("running IsStructField should return true", func() {

@@ -31,6 +31,9 @@ func ToObject(prog *loader.Program, o types.Object) Object {
 	switch ot := o.(type) {
 	case *types.Var:
 		if p.IsStructField(ot) {
+			if p.IsEmbeddedField(ot) {
+				return &Embedded{o: o, position: position, s: p.StructForField(ot)}
+			}
 			return &Field{o: o, position: position, s: p.StructForField(ot)}
 		}
 		if p.IsParameter(ot) {
@@ -81,6 +84,20 @@ func (i *Iface) FullName() string {
 		return fmt.Sprintf("(%v).%v", i.iface, i.Name())
 	}
 	return i.Name()
+}
+
+// Embedded represents an embedded struct field
+// TODO figure out how to properly handle these, if it is even possible
+type Embedded struct {
+	s        string
+	o        types.Object
+	position token.Position
+}
+
+func (e *Embedded) Position() token.Position { return e.position }
+func (e *Embedded) Name() string             { return e.o.Name() }
+func (e *Embedded) FullName() string {
+	return fmt.Sprintf("%v.%v", e.s, e.Name())
 }
 
 // Var represents unused package variables

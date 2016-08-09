@@ -1,7 +1,6 @@
 package typeutils
 
 import (
-	"fmt"
 	"go/ast"
 	"go/token"
 	"go/types"
@@ -88,6 +87,10 @@ func (program) IsInterfaceMethod(v *types.Func) bool { //TESTME
 }
 
 func (p program) IsStructField(v *types.Var) bool {
+	// embedded fields have a slightly different ast syntax
+	if p.IsEmbeddedField(v) {
+		return true
+	}
 	// struct fields are always [Ident] in [Fields] in [FieldLists] in [StructType]
 	path := p.astPath(v.Pos())
 	if len(path) < 4 {
@@ -101,17 +104,22 @@ func (p program) IsStructField(v *types.Var) bool {
 }
 
 func (p program) IsEmbeddedField(v *types.Var) bool {
-	// struct fields are always [Ident] in [Fields] in [FieldLists] in [StructType]
 	path := p.astPath(v.Pos())
-	fmt.Printf("///// %#v\n", path)
-	if len(path) < 4 {
+	if len(path) < 5 {
 		return false
 	}
+	// embedded literal
 	_, ok0 := path[0].(*ast.Ident)
-	_, ok1 := path[1].(*ast.Field)
-	_, ok2 := path[2].(*ast.FieldList)
-	_, ok3 := path[3].(*ast.StructType)
-	return ok0 && ok1 && ok2 && ok3
+	_, ok1 := path[1].(*ast.SelectorExpr)
+	_, ok2 := path[2].(*ast.Field)
+	_, ok3 := path[3].(*ast.FieldList)
+	_, ok4 := path[4].(*ast.StructType)
+	// embedded pointer
+	_, _ok0 := path[0].(*ast.StarExpr)
+	_, _ok1 := path[1].(*ast.Field)
+	_, _ok2 := path[2].(*ast.FieldList)
+	_, _ok3 := path[3].(*ast.StructType)
+	return (ok0 && ok1 && ok2 && ok3 && ok4) || (_ok0 && _ok1 && _ok2 && _ok3)
 }
 
 func (p program) StructForField(v *types.Var) string {

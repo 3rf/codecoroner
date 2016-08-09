@@ -47,7 +47,11 @@ func main() {
 		// TODO types should work without grouping
 		ucf.Logf("Printing %v results, ungrouped\n", len(unusedObjs)) // ensure a newline before printing results if -v is on
 		for _, o := range unusedObjs {
-			fmt.Println(unused.ObjectFullString(o))
+			if shortNames {
+				fmt.Println(unused.ObjectString(o))
+			} else {
+				fmt.Println(unused.ObjectFullString(o))
+			}
 		}
 	} else {
 		grouping := []string{unused.Functions, unused.Variables, unused.Fields, unused.Parameters}

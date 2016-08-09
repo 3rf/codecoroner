@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"time.Time"
+	"sync"
+	"time"
 )
 
 var pkgVar = 123
@@ -16,11 +17,15 @@ type PkgType1 struct {
 }
 
 type PkgType2 struct {
-	embedded time.Time
+	time.Time
+}
+
+type PkgType3 struct {
+	*sync.Mutex
 }
 
 var PkgAnonStruct struct {
-	field1 int
+	field1 time.Time
 }
 
 func ReturnOne(ignoreParam int) int {
