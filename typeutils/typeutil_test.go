@@ -125,7 +125,7 @@ func TestMethodMethods(t *testing.T) {
 	})
 }
 
-func TestStructForField(t *testing.T) {
+func TestStructMethods(t *testing.T) {
 	Convey("with a test main package", t, func() {
 		info := loadMainInfo()
 		prog := Program(loadProg())
@@ -219,6 +219,19 @@ func TestStructForField(t *testing.T) {
 
 			Convey("StructForField should be the name of the variable", func() {
 				So(prog.StructForField(anon.(*types.Var)), ShouldEqual, "localAnonStruct")
+			})
+		})
+
+		Convey("with a types.Object for a struct with an embedded time.Time", func() {
+			emb := findObjectWithName("embedded", info.Defs)
+			So(emb, ShouldNotBeNil)
+
+			Convey("running IsStructField should return true", func() {
+				So(prog.IsStructField(emb.(*types.Var)), ShouldBeTrue)
+			})
+
+			Convey("running IsEmbeddedField should return true", func() {
+				So(prog.IsEmbeddedField(emb.(*types.Var)), ShouldBeTrue)
 			})
 		})
 	})

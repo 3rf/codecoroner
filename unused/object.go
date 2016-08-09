@@ -4,22 +4,17 @@ import (
 	"fmt"
 	"go/token"
 	"go/types"
-	"strings"
 
 	"github.com/3rf/codecoroner/typeutils"
 	"golang.org/x/tools/go/loader"
 )
 
-type objType int
-
 const (
-	None objType = iota
-	FuncDeclaration
-	FuncLiteral
-	FuncMethod
-	Variable
-	Parameter
-	Field
+	Miscs      = "misc"
+	Functions  = "funcs"
+	Variables  = "vars"
+	Parameters = "params"
+	Fields     = "fields"
 )
 
 // Object contains all the necessary information to sort, categorize,
@@ -32,25 +27,31 @@ type Object interface {
 
 func ToObject(prog *loader.Program, o types.Object) Object {
 	p := typeutils.Program(prog)
+	position := p.Fset.Position(o.Pos())
 	switch ot := o.(type) {
+	case *types.Var:
+		if p.IsStructField(ot) {
+			return &Field{o: o, position: position, s: p.StructForField(ot)}
+		}
+		if p.IsParameter(ot) {
+			return &Param{o: o, position: position, f: p.FuncForParameter(ot)}
+		}
+		return &Var{o: o, position: position}
 	case *types.Func:
 		if p.IsMethod(ot) {
-			return &Func{
-				iface:    p.IsInterfaceMethod(ot), //TODO make these their own thing
-				fn:       ot,
-				position: p.Fset.Position(o.Pos()),
-				recv:     p.RecieverForMethod(ot),
+			if p.IsInterfaceMethod(ot) {
+				return &Iface{fn: ot, position: position, iface: p.RecieverForMethod(ot)}
 			}
+			return &Func{fn: ot, position: position, recv: p.RecieverForMethod(ot)}
 		}
-		return &Func{fn: ot, position: p.Fset.Position(o.Pos())}
+		return &Func{fn: ot, position: position}
 	default:
-		return &Misc{o: o, position: p.Fset.Position(o.Pos())}
+		return &Misc{o: o, position: position}
 	}
 }
 
 // Func represents an unused function
 type Func struct {
-	iface    bool
 	fn       *types.Func
 	position token.Position
 	recv     string
@@ -63,6 +64,59 @@ func (f *Func) FullName() string {
 		return fmt.Sprintf("(%v).%v", f.recv, f.Name())
 	}
 	return f.Name()
+}
+
+// Iface represents an interface method.
+// TODO figure out how to properly handle these, if it is even possible
+type Iface struct {
+	fn       *types.Func
+	position token.Position
+	iface    string
+}
+
+func (i *Iface) Position() token.Position { return i.position }
+func (i *Iface) Name() string             { return i.fn.Name() }
+func (i *Iface) FullName() string {
+	if i.iface != "" {
+		return fmt.Sprintf("(%v).%v", i.iface, i.Name())
+	}
+	return i.Name()
+}
+
+// Var represents unused package variables
+type Var struct {
+	o        types.Object
+	position token.Position
+}
+
+func (v *Var) Position() token.Position { return v.position }
+func (v *Var) Name() string             { return v.o.Name() }
+func (v *Var) FullName() string         { return v.Name() }
+
+// Param represents unused parameters
+type Param struct {
+	o        types.Object
+	position token.Position
+	f        string
+}
+
+func (p *Param) Position() token.Position { return p.position }
+func (p *Param) Name() string             { return p.o.Name() }
+func (p *Param) FullName() string {
+	return fmt.Sprintf("%v(%v)", p.f, p.Name())
+}
+
+// Field represents unused struct field
+type Field struct {
+	o        types.Object
+	position token.Position
+	s        string
+}
+
+func (f *Field) Position() token.Position { return f.position }
+func (f *Field) Name() string             { return f.o.Name() }
+func (f *Field) FullName() string {
+	return fmt.Sprintf("%v.%v", f.s, f.Name())
 }
 
 // Misc represents and un-handled unused identifier
@@ -112,18 +166,28 @@ func (p ByPosition) Less(i, j int) bool {
 	return p[i].Name() < p[j].Name()
 }
 
-// shorten the method name for nicer printing and say if its a method
-func handleMethodName(f *types.Func) string {
-	name := f.Name()
-	if strings.HasPrefix(f.FullName(), "(") {
-		// it's a method! let's shorten the receiver!
-		fullName := f.FullName()
-		// second to last "."
-		sepIdx := strings.LastIndex(fullName[:strings.LastIndex(fullName, ".")], ".")
-		if sepIdx <= 0 { // rare special case
-			return fullName
-		}
-		return fmt.Sprintf("(%s", fullName[sepIdx+1:])
+// GroupObjects takes a list of Objects and groups them by their underlying type.
+func GroupObjects(objs []Object) map[string][]Object {
+	group := map[string][]Object{
+		Miscs:      []Object{},
+		Functions:  []Object{},
+		Variables:  []Object{},
+		Parameters: []Object{},
+		Fields:     []Object{},
 	}
-	return name
+	for _, o := range objs {
+		switch o.(type) {
+		case *Func:
+			group[Functions] = append(group[Functions], o)
+		case *Var:
+			group[Variables] = append(group[Variables], o)
+		case *Param:
+			group[Parameters] = append(group[Parameters], o)
+		case *Field:
+			group[Fields] = append(group[Fields], o)
+		default:
+			group[Miscs] = append(group[Miscs], o)
+		}
+	}
+	return group
 }

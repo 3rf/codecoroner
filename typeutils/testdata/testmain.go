@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time.Time"
 )
 
 var pkgVar = 123
@@ -12,6 +13,10 @@ type PkgType1 struct {
 	internal struct {
 		myByte byte
 	}
+}
+
+type PkgType2 struct {
+	embedded time.Time
 }
 
 var PkgAnonStruct struct {

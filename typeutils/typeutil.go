@@ -12,15 +12,12 @@ import (
 
 const Anonymous = "<anonymous>"
 
-var _ fmt.Stringer //TODO
-
+// Program wraps a loader.Program to extend it with helper utilities.
 func Program(p *loader.Program) program {
 	return program{p}
 }
 
-type program struct {
-	*loader.Program
-}
+type program struct{ *loader.Program }
 
 // helper for generating an ast path for a single object
 func (p program) astPath(pos token.Pos) []ast.Node {
@@ -37,7 +34,6 @@ func (p program) FuncForParameter(v *types.Var) string {
 	case *ast.FuncDecl:
 		return f.Name.Name
 	case *ast.FuncType:
-		fmt.Printf(":::: %#v\n", path) //FIXME
 		if len(path) >= 5 {
 			if assign, ok := path[5].(*ast.AssignStmt); ok && len(assign.Lhs) > 0 {
 				if lhs, ok := assign.Lhs[0].(*ast.Ident); ok {
@@ -104,6 +100,20 @@ func (p program) IsStructField(v *types.Var) bool {
 	return ok0 && ok1 && ok2 && ok3
 }
 
+func (p program) IsEmbeddedField(v *types.Var) bool {
+	// struct fields are always [Ident] in [Fields] in [FieldLists] in [StructType]
+	path := p.astPath(v.Pos())
+	fmt.Printf("///// %#v\n", path)
+	if len(path) < 4 {
+		return false
+	}
+	_, ok0 := path[0].(*ast.Ident)
+	_, ok1 := path[1].(*ast.Field)
+	_, ok2 := path[2].(*ast.FieldList)
+	_, ok3 := path[3].(*ast.StructType)
+	return ok0 && ok1 && ok2 && ok3
+}
+
 func (p program) StructForField(v *types.Var) string {
 	return p.structForField(v.Pos())
 }
@@ -124,7 +134,6 @@ func (p program) structForField(pos token.Pos) string {
 		return ""
 	case *ast.Field: // struct is a field of another struct
 		if len(s.Names) > 0 {
-			//fmt.Printf(":::: %#v\n", path) //FIXME
 			return p.structForField(path[4].Pos()) + "." + s.Names[0].Name
 		}
 		return ""
