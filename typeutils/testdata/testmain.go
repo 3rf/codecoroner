@@ -28,6 +28,8 @@ var PkgAnonStruct struct {
 	field1 time.Time
 }
 
+type funcType func(typeParam int) error
+
 func ReturnOne(ignoreParam int) int {
 	type internalType struct {
 		myInt     int64

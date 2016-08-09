@@ -60,6 +60,17 @@ func (p program) IsParameter(v *types.Var) bool {
 	return ok0 && ok1 && ok2 && (ok3FT || ok3FD)
 }
 
+// IsInsideTypeDefinition returns true if the object is part of the declaration of a type.
+func (p program) IsInsideTypeDefinition(o types.Object) bool {
+	path := p.astPath(o.Pos())
+	for _, node := range path {
+		if _, ok := node.(*ast.TypeSpec); ok {
+			return true
+		}
+	}
+	return false
+}
+
 func (program) IsMethod(v *types.Func) bool {
 	if sig, ok := v.Type().(*types.Signature); ok {
 		return sig.Recv() != nil

@@ -59,6 +59,10 @@ func TestParameterMethods(t *testing.T) {
 				f := prog.FuncForParameter(ignoreParam.(*types.Var))
 				So(f, ShouldEqual, "ReturnOne")
 			})
+
+			Convey("running IsInsideTypeDefinition should return false", func() {
+				So(prog.IsInsideTypeDefinition(ignoreParam), ShouldBeFalse)
+			})
 		})
 
 		Convey("and the types.Object for var innerIgnore", func() {
@@ -75,6 +79,19 @@ func TestParameterMethods(t *testing.T) {
 			})
 		})
 
+		Convey("and the types.Object for var typeParam, which is in a type declaration", func() {
+			tp := findObjectWithName("typeParam", info.Defs)
+			So(tp, ShouldNotBeNil)
+
+			Convey("running IsParameter should return true", func() {
+				So(prog.IsParameter(tp.(*types.Var)), ShouldBeTrue)
+			})
+
+			Convey("running IsInsideTypeDefinition should return true", func() {
+				So(prog.IsInsideTypeDefinition(tp), ShouldBeTrue)
+			})
+		})
+
 		Convey("and the types.Object for var anonParam from an anonymous func", func() {
 			anonParam := findObjectWithName("anonParam", info.Defs)
 			So(anonParam, ShouldNotBeNil)
@@ -85,6 +102,10 @@ func TestParameterMethods(t *testing.T) {
 
 			Convey("running FuncForParameter should return nil", func() {
 				So(prog.FuncForParameter(anonParam.(*types.Var)), ShouldEqual, Anonymous)
+			})
+
+			Convey("running IsInsideTypeDefinition should return false", func() {
+				So(prog.IsInsideTypeDefinition(anonParam), ShouldBeFalse)
 			})
 		})
 
