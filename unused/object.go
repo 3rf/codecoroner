@@ -37,8 +37,6 @@ func ToObject(prog *loader.Program, o types.Object) Object {
 			return &Field{o: o, position: position, s: p.StructForField(ot)}
 		}
 		if p.IsParameter(ot) && !p.IsInsideTypeDefinition(o) {
-			// TODO do not return if parameter is part of a type declaration
-			//  e.g. "type fType function(input int) error"
 			return &Param{o: o, position: position, f: p.FuncForParameter(ot)}
 		}
 		return &Var{o: o, position: position}
