@@ -36,7 +36,12 @@ func ToObject(prog *loader.Program, o types.Object) Object {
 			}
 			return &Field{o: o, position: position, s: p.StructForField(ot)}
 		}
-		if p.IsParameter(ot) && !p.IsInsideTypeDefinition(o) {
+		if p.IsInsideTypeDefinition(o) { // we don't want to report these FIXME
+			// TODO handle func parameters inside of a struct type def?
+			// TODO handle hand return values inside of a typedef
+			return &Misc{o: o, position: position}
+		}
+		if p.IsParameter(ot) {
 			return &Param{o: o, position: position, f: p.FuncForParameter(ot)}
 		}
 		return &Var{o: o, position: position}

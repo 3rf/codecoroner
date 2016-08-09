@@ -80,6 +80,12 @@ func (ucf *UnusedCodeFinder) shouldIgnorePath(path string) bool {
 			return true
 		}
 	}
+	// skip vendored code, since users are unlikely to care about it
+	for _, d := range strings.Split(path, string([]rune{filepath.Separator})) {
+		if d == "vendor" {
+			return true
+		}
+	}
 	// skip test pkgs if -tests=false
 	if !ucf.IncludeTests && strings.HasSuffix(path, "_test.go") {
 		return true
