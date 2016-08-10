@@ -3,12 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/3rf/codecoroner/unused"
 	"go/build"
-	"golang.org/x/tools/go/buildutil"
 	"os"
 	"sort"
 	"strings"
+
+	"github.com/3rf/codecoroner/unused"
+	"golang.org/x/tools/go/buildutil"
 )
 
 var validKinds = map[string]struct{}{
