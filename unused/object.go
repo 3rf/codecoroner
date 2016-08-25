@@ -174,7 +174,6 @@ func (p ByPosition) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
 // Less method for sorting on the Position
 func (p ByPosition) Less(i, j int) bool {
 	oi, oj := p[i].Position(), p[j].Position()
-
 	if oi.Filename != oj.Filename {
 		return oi.Filename < oj.Filename
 	}

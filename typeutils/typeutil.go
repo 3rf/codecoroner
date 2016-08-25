@@ -33,7 +33,7 @@ func (p program) FuncForParameter(v *types.Var) string {
 	case *ast.FuncDecl:
 		return f.Name.Name
 	case *ast.FuncType:
-		if len(path) >= 5 {
+		if len(path) >= 6 {
 			if assign, ok := path[5].(*ast.AssignStmt); ok && len(assign.Lhs) > 0 {
 				if lhs, ok := assign.Lhs[0].(*ast.Ident); ok {
 					return lhs.Name
@@ -153,7 +153,7 @@ func (p program) structForField(pos token.Pos) string {
 		return ""
 	case *ast.Field: // struct is a field of another struct
 		if len(s.Names) > 0 {
-			return p.structForField(path[4].Pos()) + "." + s.Names[0].Name
+			return p.structForField(s.Pos()) + "." + s.Names[0].Name
 		}
 		return ""
 	case *ast.CompositeLit: // local anonymous struct
