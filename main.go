@@ -71,7 +71,7 @@ func main() {
 	ucf.Logf("Sorting and grouping %v results for types %v", len(unusedObjs), strings.Join(kinds, ","))
 	grouping := unused.GroupObjects(unusedObjs)
 	if ungrouped {
-		ucf.Logf("Printing results withobjs grouping\n", len(unusedObjs))
+		ucf.Logf("Printing results without grouping\n", len(unusedObjs))
 		objs := []unused.Object{}
 		for _, k := range kinds {
 			objs = append(objs, grouping[k]...)
