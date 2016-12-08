@@ -2,11 +2,12 @@ package unused
 
 import (
 	"fmt"
+	"strings"
+
 	"golang.org/x/tools/go/callgraph/rta"
 	"golang.org/x/tools/go/loader"
 	"golang.org/x/tools/go/ssa"
 	"golang.org/x/tools/go/ssa/ssautil"
-	"strings"
 )
 
 // main method for running callgraph-based unused code analysis
@@ -86,10 +87,12 @@ func (ucf *UnusedCodeFinder) getRoots(prog *ssa.Program) ([]*ssa.Function, error
 	if ucf.IncludeTests {
 		if len(pkgs) > 0 {
 			ucf.Logf("Building a test main for analysis")
-			if main := prog.CreateTestMainPackage(pkgs...); main != nil {
-				mains = append(mains, main)
-			} else {
-				ucf.Logf("WARNING: -tests flag specified, but no test files were located")
+			for _, pkg := range pkgs {
+				if main := prog.CreateTestMainPackage(pkg); main != nil {
+					mains = append(mains, main)
+				} else {
+					ucf.Logf("WARNING: -tests flag specified, but no test files were located")
+				}
 			}
 		} else {
 			return nil, fmt.Errorf("no packages specified")
