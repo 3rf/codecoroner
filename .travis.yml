@@ -1,7 +1,10 @@
 language: go
 
+script: |
+   go test
+   go test unused/...
+
 go:
-  - 1.5
   - 1.6
   - 1.7
   - tip
