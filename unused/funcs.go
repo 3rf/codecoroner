@@ -14,11 +14,13 @@ func (ucf *UnusedCodeFinder) getRoots(prog *ssa.Program) ([]*ssa.Function, error
 	// create a test main if the user requests it
 	if ucf.IncludeTests {
 		if len(pkgs) > 0 {
-			ucf.Logf("Building a test main for analysis")
-			if main := prog.CreateTestMainPackage(pkgs...); main != nil {
-				mains = append(mains, main)
-			} else {
-				ucf.Logf("WARNING: -tests flag specified, but no test files were located")
+			ucf.Logf("Building a test mains for analysis")
+			for _, pkg := range pkgs {
+				if main := prog.CreateTestMainPackage(pkg); main != nil {
+					mains = append(mains, main)
+				} else {
+					ucf.Logf("WARNING: -tests flag specified, but no test files were located for %s", pkg.String())
+				}
 			}
 		} else {
 			return nil, fmt.Errorf("no packages specified")
