@@ -91,7 +91,7 @@ func (ucf *UnusedCodeFinder) getRoots(prog *ssa.Program) ([]*ssa.Function, error
 				if main := prog.CreateTestMainPackage(pkg); main != nil {
 					mains = append(mains, main)
 				} else {
-					ucf.Logf("WARNING: -tests flag specified, but no test files were located")
+					ucf.Logf("WARNING: -tests flag specified, but no test files found for %s", pkg)
 				}
 			}
 		} else {
