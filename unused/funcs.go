@@ -2,11 +2,12 @@ package unused
 
 import (
 	"fmt"
+	"strings"
+
 	"golang.org/x/tools/go/callgraph/rta"
 	"golang.org/x/tools/go/loader"
 	"golang.org/x/tools/go/ssa"
 	"golang.org/x/tools/go/ssa/ssautil"
-	"strings"
 )
 
 // main method for running callgraph-based unused code analysis
