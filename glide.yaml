@@ -1,0 +1,15 @@
+package: github.com/3rf/codecoroner
+import:
+- package: golang.org/x/tools
+  subpackages:
+  - go/buildutil
+  - go/callgraph/rta
+  - go/loader
+  - go/ssa
+  - go/ssa/ssautil
+  - go/types
+testImport:
+- package: github.com/smartystreets/goconvey
+  version: ^1.6.2
+  subpackages:
+  - convey

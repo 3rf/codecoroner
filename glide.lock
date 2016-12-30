@@ -1,0 +1,33 @@
+hash: d77cd447f5040e48a3deb27139c7f4409f03b1ddc6189b1bc9df58e83950d721
+updated: 2016-12-30T09:25:50.050418389-06:00
+imports:
+- name: golang.org/x/tools
+  version: 908849c3379245f71612058fbf92cf6bf58c3c75
+  subpackages:
+  - go/ast/astutil
+  - go/buildutil
+  - go/callgraph
+  - go/callgraph/rta
+  - go/loader
+  - go/ssa
+  - go/ssa/ssautil
+  - go/types
+  - go/types/typeutil
+testImports:
+- name: github.com/gopherjs/gopherjs
+  version: db2cfff3878815d744fb4a4bd07cba0596eaf2a5
+  subpackages:
+  - js
+- name: github.com/jtolds/gls
+  version: bb0351aa7eb6f322f32667d51375f26a2bca6628
+- name: github.com/smartystreets/assertions
+  version: 26acb9229f421449ac63d014995b282d59261a8b
+  subpackages:
+  - internal/go-render/render
+  - internal/oglematchers
+- name: github.com/smartystreets/goconvey
+  version: d4c757aa9afd1e2fc1832aaab209b5794eb336e1
+  subpackages:
+  - convey
+  - convey/gotest
+  - convey/reporting
