@@ -1,6 +1,6 @@
 codecoroner [![Build Status](https://travis-ci.org/3rf/codecoroner.svg)](https://travis-ci.org/3rf/codecoroner)
 ===============
-######Version 1.2 by Kyle Erf, MIT License 
+###### Version 1.2 by Kyle Erf, MIT License 
 
 
 Leaving dead code in a large codebase with multiple libraries is difficult to avoid.
@@ -17,7 +17,7 @@ At MongoDB, it helps us keep our repositories clean and even caught a couple bug
 So far, codecoronoer has found dead code in every large public Go project I point it at.
 
 
-###Quick Start
+### Quick Start
 
 First, grab the `codecoroner` binary by either cloning this git repository and building main.go or by running
 ```bash
@@ -28,7 +28,7 @@ which should install a `codecoroner` binary in `$GOPATH/bin`
 Codecoroner has two modes: `funcs` and `idents`, which detect dead code using callgraph and identifier analysis, respectively.
 Each has their own set of benefits.
 
-####Funcs
+#### Funcs
 
 The `funcs` command builds a graph of function calls within your codebase and checks which functions are definied, but not reachable, from your `main` packages. 
 This method takes advantage of the `callgraph/rta` implementation, which is geared toward applications like dead code analysis.
@@ -53,7 +53,7 @@ As a note: the `funcs` command only detects the usage of top-level functions and
 It does not track usage of anonymous functions or functions declared as package variables in the `var myFunc = func(a string){...}`; however, the `idents` command can catch the latter case.
 
 
-####Idents
+#### Idents
 
 The `idents` command is a more simplistic and broad form of analysis.
 It looks at every declared non-local identifier (package variables, functions, parameters, struct fields, methods) and checks to see that those identifiers are used outside of their declaration. 
@@ -93,7 +93,7 @@ Imports will be automatically detected so that callgraphs can be generated, but 
 
 #### Flags
 
-#####-v
+##### -v
 ```
 codecoroner -v funcs ./...
 ```
@@ -123,7 +123,7 @@ unused/testdata/pkg2/kittens.go:13:1: Val
 unused/testdata/pkg2/kittens.go:25:1: GrayKittenLink
 ```
 
-#####-tests
+##### -tests
 ```
 codecoroner -tests funcs ./...
 ```
@@ -132,7 +132,7 @@ The `-tests` flag includes test files and packages in your analysis.
 Doing this allows you to test main-less libraries and detect dead test helper code.
 
 
-#####-ignore
+##### -ignore
 ```
 codecoroner -ignore vendor,testdata funcs ./...
 ```
@@ -141,7 +141,7 @@ The `-ignore` flag accepts a comma-separated list of strings.
 If any of the listed strings matches part of a filepath during scanning, that file will be ignored and excluded from the analysis.
 This flag is a simple way to ignore vendored code without complicating the codecoroner's file argument.
 
-#####-tags
+##### -tags
 ```
 codecornor -tags debug funcs ./...
 ```
