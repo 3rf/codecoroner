@@ -149,6 +149,14 @@ codecornor -tags debug funcs ./...
 The `-tags` flag lets you pass build tags like you would during a regular `go build`. 
 If your codebase uses flags, note that unbuilt files may show up as dead code.
 
+##### -errorIfFound
+```
+codecornor -errorIfFound funcs ./...
+```
+
+The `-errorIfFound` flag lets you specify that a non-zero exit code should be used if
+dead code is detected. This allows CI and similar systems to flag the fact dead code exists.
+
 #### Troubleshooting
 
 Some notes that may help with troubleshooting:

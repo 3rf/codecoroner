@@ -12,7 +12,11 @@ import (
 )
 
 func main() {
-	var ignoreList string
+	var (
+		ignoreList           string
+		exitWithErrorIfFound bool
+	)
+
 	ucf := unused.NewUnusedCodeFinder()
 	flag.BoolVar(&(ucf.Verbose), "v", false,
 		"prints extra information during execution to stderr")
@@ -21,6 +25,7 @@ func main() {
 		"don't read files that contain the given comma-separated strings (use to avoid /testdata, etc) ")
 	// hack for testing code with build flags
 	flag.Var((*buildutil.TagsFlag)(&build.Default.BuildTags), "tags", "a list of build tags")
+	flag.BoolVar(&exitWithErrorIfFound, "errorIfFound", false, "exit with an error code if unused code is found")
 	flag.Parse()
 	// handle ignore list
 	ucf.Ignore = strings.Split(ignoreList, ",")
@@ -53,5 +58,9 @@ func main() {
 	sort.Sort(unused.ByPosition(unusedObjects))
 	for _, o := range unusedObjects {
 		fmt.Printf("%s\n", o)
+	}
+
+	if exitWithErrorIfFound && len(unusedObjects) > 0 {
+		os.Exit(-1)
 	}
 }
