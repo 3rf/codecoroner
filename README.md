@@ -1,5 +1,15 @@
 codecoroner [![Build Status](https://travis-ci.org/3rf/codecoroner.svg)](https://travis-ci.org/3rf/codecoroner)
 ===============
+
+## WARNING
+*Heads up that this project is no longer maintained.*
+
+Unfortunately I haven't had the luxury of writing Go for my job for a few years now.
+I hope if some Google search brought you here, you're able to find what you need.
+
+I realize the irony of a dead code project being dead.
+
+
 ###### Version 1.2 by Kyle Erf, MIT License 
 
 
