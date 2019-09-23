@@ -21,6 +21,7 @@ func main() {
 		"don't read files that contain the given comma-separated strings (use to avoid /testdata, etc) ")
 	// hack for testing code with build flags
 	flag.Var((*buildutil.TagsFlag)(&build.Default.BuildTags), "tags", "a list of build tags")
+	var ci = flag.Bool("ci", false, "Enables non zero exit code if any dead code is found during analysis")
 	flag.Parse()
 	// handle ignore list
 	ucf.Ignore = strings.Split(ignoreList, ",")
@@ -53,5 +54,8 @@ func main() {
 	sort.Sort(unused.ByPosition(unusedObjects))
 	for _, o := range unusedObjects {
 		fmt.Printf("%s\n", o)
+	}
+	if *ci {
+		os.Exit(len(unusedObjects))
 	}
 }
